@@ -13,12 +13,12 @@ def check_entry(args):
     return 0, 'Success'
 
 
-def check_data(hf_folder:str, worker: int = 4):
+def check_data(hf_folder:str, num_worker: int = 4):
     ds = load_from_disk(hf_folder)
     N = len(ds)
 
     inputs = [(idx, ds) for idx in range(len(ds))]
-    with Pool(processes=worker) as pool:
+    with Pool(processes=num_worker) as pool:
         results = list(tqdm(pool.imap(check_entry, inputs), total=N))
         
         for res in results:
