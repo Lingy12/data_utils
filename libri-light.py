@@ -9,7 +9,7 @@ import json
 from multiprocessing import Pool
 from typing import Tuple
 
-schema = ["id", "path", "audio", "sentence"]
+schema = ["id", "audio", "sentence"]
 meta_key = ["speaker", "book_meta", "snr", "voice_activity"]
 schema += meta_key
 
@@ -50,7 +50,7 @@ def form_ds(librilght_raw:str, dest:str, sr=None, audio_check:bool=True, num_wor
             if status == 1:
                 status, id, file_path, sentence, meta_data = res
                 ds_dict["id"].append(id)
-                ds_dict["path"].append(str(file_path))
+                # ds_dict["path"].append(str(file_path))
                 ds_dict["audio"].append(str(file_path))
                 ds_dict["sentence"].append(sentence) # no transcript
     # 
