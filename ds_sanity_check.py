@@ -8,8 +8,8 @@ def check_entry(args):
     idx, ds = args # unpack
     try:
         _ = ds[idx]
-    except:
-        return -1, f'Check index {idx}'
+    except Exception as e:
+        return -1, f'Check index {idx}, {e}'
     return 0, 'Success'
 
 
