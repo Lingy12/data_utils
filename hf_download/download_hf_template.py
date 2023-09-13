@@ -9,5 +9,8 @@ def download_ds(ds_hf_name:str, dest: str, num_worker:int = 4):
     ds.save_to_disk(dest, num_proc=num_worker)
     print('Dataset saved.')
 
+    ds.cleanup_cache_files()
+    print('Local cache cleared')
+
 if __name__ == "__main__":
     fire.Fire(download_ds)

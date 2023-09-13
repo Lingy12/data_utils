@@ -10,9 +10,9 @@ def download_ds(dest: str, num_worker:int = 4):
         print(f'Downloading and load {lang} dataset from hugging face hub...')
         ds = load_dataset('facebook/voxpopuli', lang, num_proc=num_worker)
         print('Dataset loaded')
-        dest = os.path.join(dest, lang)
-        print(f'Saving dataset to {dest}')
-        ds.save_to_disk(dest, num_proc=num_worker)
+        curr_dest = os.path.join(dest, lang)
+        print(f'Saving dataset to {curr_dest}')
+        ds.save_to_disk(curr_dest, num_proc=num_worker)
         print('Dataset saved.')
 
 if __name__ == "__main__":
