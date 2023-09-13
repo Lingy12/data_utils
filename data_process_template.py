@@ -9,7 +9,7 @@ import json
 from multiprocessing import Pool
 from typing import Tuple
 
-schema = ["id", "path", "audio", "sentence"]
+schema = ["id", "audio", "sentence"]
 meta_key = ["speaker", "book_meta", "snr", "voice_activity"]
 schema += meta_key
 
