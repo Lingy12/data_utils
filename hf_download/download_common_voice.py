@@ -25,10 +25,15 @@ def download_ds(dest: str, num_worker:int = 4):
         ds = load_dataset('mozilla-foundation/common_voice_13_0', lang, num_proc=num_worker)
         print('Dataset loaded')
         print(f'Saving dataset to {curr_dest}')
-        ds.save_to_disk(curr_dest, num_proc=num_worker)
-        print('Dataset saved.')
+        try:
+            ds.save_to_disk(curr_dest, num_proc=num_worker)
+            print('Dataset saved.')
+        except:
+            print('Probably split problem.')
+
 
         ds.cleanup_cache_files()
+        print('Cache cleaned')
 
 if __name__ == "__main__":
     fire.Fire(download_ds)
