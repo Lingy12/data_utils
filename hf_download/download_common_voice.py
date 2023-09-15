@@ -14,26 +14,32 @@ langs = ['bn','de', 'en', 'fa', 'fr', 'es', 'sl', 'kab', 'cy', 'ca', 'tt',
          'mrj', 'tw', 'ko', 
          'yo', 'oc', 'tk', 'vot', 'az', 'ast', 'ne-NP', 'quy', 'lo', 'dyu', 'is']  
 
+splits = ['train', 'dev', 'test', 'other', 'invalidated']
+
 def download_ds(dest: str, num_worker:int = 4):
     for lang in langs:
         curr_dest = os.path.join(dest, lang)
         
-        if os.path.exists(curr_dest):
-            print(f'{lang} ds downloaded, skipping')
-            continue
         print(f'Downloading and load {lang} dataset from hugging face hub...')
-        ds = load_dataset('mozilla-foundation/common_voice_13_0', lang, num_proc=num_worker)
-        print('Dataset loaded')
-        print(f'Saving dataset to {curr_dest}')
-        try:
-            ds.save_to_disk(curr_dest, num_proc=num_worker)
-            print('Dataset saved.')
-        except:
-            print('Probably split problem.')
+
+        for split in splits:
+            saving_dest = os.path.join(curr_dest, split)
+            if os.path.exists(saving_dest):
+                print(f'{lang}/{split} ds downloaded, skipping')
+                continue
+
+            ds = load_dataset('mozilla-foundation/common_voice_13_0', lang, num_proc=num_worker, split=split)
+            print('Dataset loaded')
+            print(f'Saving dataset to {lang}/{saving_dest}')
+            try:
+                ds.save_to_disk(saving_dest, num_proc=num_worker)
+                print('Dataset saved.')
+            except:
+                print(f'Saving {lang}/{split} failed.')
 
 
-        ds.cleanup_cache_files()
-        print('Cache cleaned')
+            ds.cleanup_cache_files()
+            print('Cache cleaned')
 
 if __name__ == "__main__":
     fire.Fire(download_ds)
