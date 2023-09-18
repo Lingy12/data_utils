@@ -2,8 +2,8 @@ from datasets import load_dataset
 import fire
 import os
 
-langs = ['et', 'en', 'de', 'fr', 'es', 'pl', 'it', 'ro', 
- 'hu', 'cs', 'nl', 'fi', 'hr', 'sk', 'sl',  'lt', 'en_accented']
+# langs = ['et', 'en', 'de', 'fr', 'es', 'pl', 'it', 'ro', 'hu', 'cs', 'nl', 'fi', 'hr', 'sk', 'sl',  'lt', 'en_accented']
+langs = ['multilang']
 
 def download_ds(dest: str, num_worker:int = 4):
     for lang in langs:

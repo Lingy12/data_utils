@@ -14,7 +14,7 @@ langs = ['bn','de', 'en', 'fa', 'fr', 'es', 'sl', 'kab', 'cy', 'ca', 'tt',
          'mrj', 'tw', 'ko', 
          'yo', 'oc', 'tk', 'vot', 'az', 'ast', 'ne-NP', 'quy', 'lo', 'dyu', 'is']  
 
-splits = ['train', 'dev', 'test', 'other', 'invalidated']
+splits = ['train', 'validation', 'test', 'other', 'invalidated']
 
 def download_ds(dest: str, num_worker:int = 4):
     for lang in langs:
@@ -24,11 +24,16 @@ def download_ds(dest: str, num_worker:int = 4):
 
         for split in splits:
             saving_dest = os.path.join(curr_dest, split)
+            print(saving_dest)
             if os.path.exists(saving_dest):
                 print(f'{lang}/{split} ds downloaded, skipping')
                 continue
-
-            ds = load_dataset('mozilla-foundation/common_voice_13_0', lang, num_proc=num_worker, split=split)
+            
+            try:
+                ds = load_dataset('mozilla-foundation/common_voice_13_0', lang, num_proc=num_worker, split=split)
+            except:
+                print(f'{lang}/{split} does not exist. Please check the dataset')
+                continue
             print('Dataset loaded')
             print(f'Saving dataset to {lang}/{saving_dest}')
             try:
