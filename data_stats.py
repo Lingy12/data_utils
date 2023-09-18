@@ -19,9 +19,9 @@ def check_entry(args):
 
 
 def check_data(hf_folder:str, num_worker: int = 4):
-    splits = list(filter(lambda x: os.path.isdir(x), os.listdir(hf_folder)))
-    
-    if len(splits) >= 2:
+    splits = list(filter(lambda x: os.path.isdir(os.path.join(hf_folder, x)), os.listdir(hf_folder)))
+    print(splits)
+    if len(splits) >= 0:
         print('Data containing split')
         target_split = splits
     else:
@@ -67,7 +67,7 @@ def check_data(hf_folder:str, num_worker: int = 4):
         print('Dataset checked.')
     
     with open(os.path.join(hf_folder, 'ds_stats.json'), 'w') as f:
-        json.dump(stats, f)
+        json.dump(stats, f, indent=1)
 if __name__ == "__main__":
     fire.Fire(check_data)
 
