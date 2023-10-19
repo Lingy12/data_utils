@@ -58,7 +58,7 @@ def run(ds_path, batch_size,model_name,language,local=True, devices=[0,1]):
     
     with mp.Manager() as manager:
         res_dict = manager.dict()
-        mp.spawn(run_rank, args=(len(devices), model_name, ds.copy(), devices, batch_size, language, res_dict))
+        mp.spawn(run_rank, args=(len(devices), model_name, ds.copy(), devices, batch_size, language, res_dict), nprocs=len(devices))
     
     # aggregate result
     transcription_lst = [res_dict[i] for i in range(devices)]
