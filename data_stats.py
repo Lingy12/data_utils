@@ -17,10 +17,19 @@ def check_entry(args):
         return -1, f'Check index {idx}, {e}', 0
     return 0, 'Success', total_audio_length
 
+def get_all_split(root_hf):
+    directories = []
+    for dirpath, dirnames, filenames in os.walk(root_hf):
+        if len(dirnames) == 0:
+            directories.append(dirpath)
+    return directories
+
 
 def check_data(hf_folder:str, num_worker: int = 4):
     splits = list(filter(lambda x: os.path.isdir(os.path.join(hf_folder, x)), os.listdir(hf_folder)))
+    splits = get_all_split(hf_folder)
     print(splits)
+    print('Total split = {}'.format(len(splits)))
     if len(splits) > 0:
         print('Data containing split')
         target_split = splits
