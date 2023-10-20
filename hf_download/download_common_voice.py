@@ -25,7 +25,7 @@ def download_ds(dest: str, num_worker:int = 4):
         for split in splits:
             saving_dest = os.path.join(curr_dest, split)
             print(saving_dest)
-            if os.path.exists(saving_dest):
+            if os.path.exists(saving_dest) and len(os.listdir(saving_dest)) > 0:
                 print(f'{lang}/{split} ds downloaded, skipping')
                 continue
             
