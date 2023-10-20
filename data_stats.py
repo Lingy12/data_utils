@@ -36,11 +36,16 @@ def check_data(hf_folder:str, num_worker: int = 4):
     else:
         target_split = ['']
     stats = {}
-
+    failed_split = []
     for split in target_split:
         if len(split) != 0:
             print('Checking split {}'.format(split))
-        ds = load_from_disk(os.path.join(hf_folder, split))
+        try:
+            ds = load_from_disk(os.path.join(hf_folder, split))
+        except:
+            failed_split.append(split)
+            print(split + ' failed.')
+            continue
         N = len(ds)
     
         print(f'total rows = {N}')
