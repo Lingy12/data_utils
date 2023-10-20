@@ -78,6 +78,7 @@ def check_data(hf_folder:str, num_worker: int = 4):
             # _ = ds[idx]
         # except:
             # print('Check index = {}'.format(idx))
+        print(failed_split)
         print('Dataset checked.')
     
     with open(os.path.join(hf_folder, 'ds_stats.json'), 'w') as f:
