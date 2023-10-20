@@ -26,7 +26,8 @@ def get_rank_lst(batched_wav_lst, rank, word_size):
 
 def inference_on_device(rank, word_size, model_size, batched_wavs, devices, ori_folder, output_folder, language):
     rank_wavs = get_rank_lst(batched_wavs, rank, word_size)
-    device = devices[rank]
+    torch.cuda.set_device(devices[rank])
+    device = 'cuda'
     model = whisper.load_model(model_size).to(device)
     tqdm_title = '# rank {} inference'.format(rank)
 
@@ -50,7 +51,7 @@ def inference_on_device(rank, word_size, model_size, batched_wavs, devices, ori_
                         f.write(results[i].text)
             pbar.update(1)
          
-def transcribe_audios(ori_folder, output_folder, whisper_size, language, devices=['cuda:0'], batch_size=4):
+def transcribe_audios(ori_folder, output_folder, whisper_size, language, devices=[0], batch_size=4):
 
     if not os.path.exists(output_folder):
         os.mkdir(output_folder)
@@ -65,7 +66,6 @@ def transcribe_audios(ori_folder, output_folder, whisper_size, language, devices
             wavs += audio_files
     print(len(wavs))
     # up to here, directory is created 
-
     batched_wavs = list(batch(wavs, batch_size))
     # print(batched_wavs)
     print('total batch = {}'.format(len(batched_wavs)))
