@@ -10,7 +10,7 @@ def get_total_hour(json_path):
 
     for key in res.keys():
         total_hour += res[key]['audio_hours']
-        total_sample += res[key]['no_of_row']
+        total_sample += res[key]['num_of_row']
 
     print('Total hour = {}'.format(total_hour))
     print('Total sample = {}'.format(total_sample))
