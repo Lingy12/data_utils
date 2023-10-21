@@ -13,8 +13,7 @@ langs = ['bn','de', 'en', 'fa', 'fr', 'es', 'sl', 'kab', 'cy', 'ca', 'tt',
          'tig', 'ig', 'nan-tw', 'mhr','tok', 'yue', 'sah', 'mk', 'sc', 'skr', 'ti',
          'mrj', 'tw', 'ko', 
          'yo', 'oc', 'tk', 'vot', 'az', 'ast', 'ne-NP', 'quy', 'lo', 'dyu', 'is']  
-
-splits = ['train', 'validation', 'test', 'other', 'invalidated', 'dev']
+splits = ['train', 'validation', 'test', 'other', 'invalidated']
 
 def download_ds(dest: str, num_worker:int = 4):
     for lang in langs:
