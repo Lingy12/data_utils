@@ -85,6 +85,3 @@ def check_data(hf_folder:str, num_worker: int = 4):
         json.dump(stats, f, indent=1)
 if __name__ == "__main__":
     fire.Fire(check_data)
-
-
-
