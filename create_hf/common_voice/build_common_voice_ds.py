@@ -36,7 +36,7 @@ def build_language_ds_pd(args):
         split_data['audio'] = split_data['path'].map(lambda x: os.path.join(clips_directory, x))
         split_data['language'] = language    
         dfs.append(split_data.copy())
-    return pd.concat(dfs), status
+    return Dataset.from_pandas(pd.concat(dfs), preserve_index=False).cast_column('audio', Audio()), language, status
 
 def build_hf_ds(raw_data_dir, dest, num_workers = 4):
     language_dir = os.listdir(raw_data_dir)
@@ -52,20 +52,17 @@ def build_hf_ds(raw_data_dir, dest, num_workers = 4):
     with mp.Pool(num_workers) as p:
         r = list(tqdm(p.imap(build_language_ds_pd, params), total=len(params)))
     
-    df_lst = []
+    ds_dict = DatasetDict()
     for res in r:
-        df, status = res
+        ds, language, status = res
         if status == 0:
             print('Please check tsv first.')
             exit()
-        df_lst.append(df)
-    overall_df = pd.concat(df_lst)
-    print('Total rows = {}'.format(len(overall_df)))
-    langs = overall_df['language'].unique()
-    ds_dict = DatasetDict()
-    for lang in langs:
-        ds = Dataset.from_pandas(overall_df[overall_df['language'] == lang], preserve_index=False).cast_column('audio', Audio())
-        ds_dict[lang] = ds
+        ds_dict[language] = ds
+        print(language + ' ds added.')
+        print('Total rows = {}'.format(len(ds)))
+
+    print(ds_dict)
     ds_dict.save_to_disk(dest, num_proc=num_workers)
 
 if __name__ == "__main__":
