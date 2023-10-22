@@ -44,6 +44,7 @@ def build_hf_ds(raw_data_dir, dest, num_workers = 4):
     with mp.Pool(num_workers) as p:
         r = list(tqdm(p.imap(build_language_ds_pd, params), total=len(params)))
     overall_df = pd.concat(r)
+    print('Total rows = {}'.format(len(overall_df)))
     ds = Dataset.from_pandas(overall_df, preserve_index=False)
     ds = ds.cast_column('audio', Audio())
     ds.save_to_disk(dest, num_proc=num_workers)
