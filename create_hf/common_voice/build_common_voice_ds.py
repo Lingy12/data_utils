@@ -1,5 +1,5 @@
 import fire
-from datasets import load_from_disk, Dataset, Audio
+from datasets import DatasetDict, load_from_disk, Dataset, Audio
 import multiprocessing as mp
 from glob import glob
 import os
@@ -61,9 +61,12 @@ def build_hf_ds(raw_data_dir, dest, num_workers = 4):
         df_lst.append(df)
     overall_df = pd.concat(df_lst)
     print('Total rows = {}'.format(len(overall_df)))
-    ds = Dataset.from_pandas(overall_df, preserve_index=False)
-    ds = ds.cast_column('audio', Audio())
-    ds.save_to_disk(dest, num_proc=num_workers)
+    langs = overall_df['language'].unique()
+    ds_dict = DatasetDict()
+    for lang in langs:
+        ds = Dataset.from_pandas(overall_df[overall_df['language'] == lang], preserve_index=False).cast_column('audio', Audio())
+        ds_dict[lang] = ds
+    ds_dict.save_to_disk(dest, num_proc=num_workers)
 
 if __name__ == "__main__":
     fire.Fire(build_hf_ds)
