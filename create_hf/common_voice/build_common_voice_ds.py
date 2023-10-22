@@ -5,6 +5,7 @@ from glob import glob
 import os
 from tqdm import tqdm
 import pandas as pd
+import csv
 
 sentence_reported = 'reported.tsv'
 splits = ['dev.tsv','other.tsv','test.tsv','train.tsv','invalidated.tsv','validated.tsv']
@@ -15,6 +16,7 @@ def build_language_ds_pd(args):
     target_folder = os.path.join(raw_data_dir, language)
     clips_directory = os.path.join(target_folder, 'clips')
     dfs = []
+    status = 1
     # print(target_folder)
     for split in splits:
         # print(split)
@@ -23,12 +25,18 @@ def build_language_ds_pd(args):
             print('{} not exists for {}'.format(split, language))
             continue
         # print(split_path)
-        split_data = pd.read_csv(split_path, sep="\t")
+        try:
+            split_data = pd.read_csv(split_path, sep="\t", low_memory=False, quoting=csv.QUOTE_NONE)
+        except Exception as e:
+            print(e)
+            print('Failed to process {}'.format(split_path))
+            status = 0
+            continue
         split_data['split'] = split[:-4] # append split
         split_data['audio'] = split_data['path'].map(lambda x: os.path.join(clips_directory, x))
         split_data['language'] = language    
         dfs.append(split_data.copy())
-    return pd.concat(dfs)
+    return pd.concat(dfs), status
 
 def build_hf_ds(raw_data_dir, dest, num_workers = 4):
     language_dir = os.listdir(raw_data_dir)
@@ -43,7 +51,15 @@ def build_hf_ds(raw_data_dir, dest, num_workers = 4):
     
     with mp.Pool(num_workers) as p:
         r = list(tqdm(p.imap(build_language_ds_pd, params), total=len(params)))
-    overall_df = pd.concat(r)
+    
+    df_lst = []
+    for res in r:
+        df, status = res
+        if status == 0:
+            print('Please check tsv first.')
+            exit()
+        df_lst.append(df)
+    overall_df = pd.concat(df_lst)
     print('Total rows = {}'.format(len(overall_df)))
     ds = Dataset.from_pandas(overall_df, preserve_index=False)
     ds = ds.cast_column('audio', Audio())
