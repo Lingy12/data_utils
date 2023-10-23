@@ -14,7 +14,7 @@ def download_ds(dest: str, num_worker:int=4):
         if os.path.exists(target_path):
             print('Split exists, continue {}'.format(target))
             continue
-        ds = load_dataset('MLCommons/peoples_speech', num_proc=num_worker, name=target)
+        ds = load_dataset('MLCommons/peoples_speech', num_proc=num_worker, name=target, cache_dir=dest)
         print('Dataset loaded')
 
         print('Saving dataset...')
