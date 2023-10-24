@@ -2,7 +2,7 @@ from datasets import load_dataset
 import fire
 
 import os
-subset = ['clean', 'clean_sa', 'dirty', 'dirty_sa', 'microset', 'test', 'validation']
+subset = ['clean', 'clean_sa', 'dirty', 'dirty_sa', 'test', 'validation']
 def download_ds(dest: str, num_worker:int=4):
     print('Downloading and load dataset from hugging face hub...')
     
