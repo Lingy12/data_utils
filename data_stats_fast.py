@@ -7,6 +7,7 @@ from tqdm import tqdm
 from multiprocessing import Pool
 from multiprocessing.pool import ThreadPool
 import os
+import datasets
 def check_entry(args):
     idx, ds = args # unpack
     total_audio_length = 0
@@ -45,6 +46,7 @@ def check_split_rank(rank, world_size, splits, hf_folder, worker_assigned, queue
         try:
             ds = load_from_disk(os.path.join(hf_folder, split))
         except:
+            # raise Exception('Dataset reading failed.')
             queue.put((rank, 0,split,None))
             continue
         N = len(ds)
@@ -52,8 +54,15 @@ def check_split_rank(rank, world_size, splits, hf_folder, worker_assigned, queue
         print(prefix + f'total rows = {N}')
         inputs = [(idx, ds) for idx in range(len(ds))]
         ds_audio_length = 0
-        with Pool(processes=worker_assigned) as pool:
-            results = list(tqdm(pool.imap(check_entry, inputs), total=N, desc=prefix + ' ' + split))
+        split_data = os.path.join(split_path, 'split_stats.json')
+        if os.path.exists(split_data):
+            with open(split_data, 'r') as f:
+                curr_res = json.load(f)
+            ds_audio_length = curr_res['audio_hours'] * 3600
+            print(prefix + '{} data exists, skip checking.'.format(split))
+        else:
+            with Pool(processes=worker_assigned) as pool:
+                results = list(tqdm(pool.imap(check_entry, inputs), total=N, desc=prefix + ' ' + split))
         
             for res in results:
                 code, message, audio_length = res
@@ -63,16 +72,16 @@ def check_split_rank(rank, world_size, splits, hf_folder, worker_assigned, queue
                 else:
                     ds_audio_length += audio_length
             # print(code, message)
-            print(prefix + split)
-            print(prefix + 'Dataset seconds = {}'.format(ds_audio_length))
-            print(prefix + 'Dataset minutes = {}'.format(ds_audio_length / 60))
-            print(prefix + 'Dataset hours = {}'.format(ds_audio_length / 3600))
+        print(prefix + split)
+        print(prefix + 'Dataset seconds = {}'.format(ds_audio_length))
+        print(prefix + 'Dataset minutes = {}'.format(ds_audio_length / 60))
+        print(prefix + 'Dataset hours = {}'.format(ds_audio_length / 3600))
 
-            curr_res = {"num_of_row": N, "audio_hours": ds_audio_length / 3600}
+        curr_res = {"num_of_row": N, "audio_hours": ds_audio_length / 3600}
 
-            with open(os.path.join(split_path, 'split_stats.json'), 'w') as f:
-                json.dump(curr_res, indent=1, fp=f)
-            queue.put((rank, 1, split, curr_res))
+        with open(os.path.join(split_path, 'split_stats.json'), 'w') as f:
+            json.dump(curr_res, indent=1, fp=f)
+        queue.put((rank, 1, split, curr_res))
 
     
 def check_data(hf_folder:str, num_worker: int = 4):
