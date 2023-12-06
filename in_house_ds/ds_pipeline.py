@@ -11,8 +11,7 @@ import shutil
 from pydub import AudioSegment
 
 TIME_FORMAT ="{:.2f}"
-
-def _segment(args): # speaker level output folder
+def _segment(args): # speaker level output folder wav_file, seg_lst, output_folder = args
     wav_file, seg_lst, output_folder = args
     wav_file = wav_file.strip()
     failed_lst = []
@@ -99,12 +98,18 @@ class DataPipeline:
         seg_lst, text_lst, utt2spk_lst = [], [], []
         for tg in tqdm(glob(transcription_glob)):
             # print(tg)
-            grids = textgrid.TextGrid.fromFile(tg)
+            try:
+                grids = textgrid.TextGrid.fromFile(tg)
+            except:
+                # print(tg)
+                raise Exception(f'Check file {tg}')
             speaker = self._extract_from_path(self.transcription_pattern, tg)['speaker']
             for grid in grids[0]:
                 # print(grid)
                 start, end, sentence = float(TIME_FORMAT.format(grid.minTime)), float(TIME_FORMAT.format(grid.maxTime)), grid.mark
                 segment_id = '-'.join([speaker, self._transform_number(start), self._transform_number(end)])
+                if len(sentence) == 0 or sentence == '<S>' or sentence == '<Z>':
+                    continue
                 seg_lst.append((segment_id, speaker, start, end))
                 text_lst.append((segment_id, sentence))
                 utt2spk_lst.append((segment_id, speaker))
@@ -150,7 +155,10 @@ class DataPipeline:
         with open(file, 'r') as f:
             lines = f.readlines()
         for line in lines:
-            key, value = line.split(' ', 1)
+            try:
+                key, value = line.split(' ', 1)
+            except:
+                raise Exception(f'Check file: {file}, line = {line}')
             res[key] = value
         return res 
 
@@ -158,6 +166,7 @@ class DataPipeline:
         res = {}
         # print(transcripts)
         for id in transcripts.keys():
+            # print(id)
             script = transcripts[id]
             speaker, start, end = id.split('-')
             if speaker not in res:
