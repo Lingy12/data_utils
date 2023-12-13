@@ -28,8 +28,10 @@ def generate_dict_for_folder(args):
 def build_ds(root_folder, dest, num_workers=4):
     params = []
     languages = os.listdir(root_folder)
-    
+    print(languages)
     for lang in languages:
+        if not os.path.isdir(os.path.join(root_folder, lang)):
+            continue
         years = os.listdir(os.path.join(root_folder, lang))
         for year in years:
             params.append((lang, year, root_folder))
@@ -39,11 +41,14 @@ def build_ds(root_folder, dest, num_workers=4):
         r = list(tqdm(p.imap(generate_dict_for_folder, params), total=len(params)))
 
     overall_dict = reduce(merge_dicts, r)
-    
+
     print(len(overall_dict[list(overall_dict.keys())[0]]))
+    for k in overall_dict.keys():
+        print(k, overall_dict[k][0])
     ds = Dataset.from_dict(overall_dict).cast_column('audio', Audio())
 
-    ds.save_to_disk(dest)
+    ds.save_to_disk(dest, num_proc=32)
     
     
-    
+if __name__ == "__main__":
+    fire.Fire(build_ds)    

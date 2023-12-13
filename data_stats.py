@@ -51,12 +51,15 @@ def check_data(hf_folder:str, num_worker: int = 4):
         print(f'total rows = {N}')
         inputs = [(idx, ds) for idx in range(len(ds))]
         ds_audio_length = 0
+        max_audio_length = 0
         with Pool(processes=num_worker) as pool:
             results = list(tqdm(pool.imap(check_entry, inputs), total=N))
         
             for res in results:
                 code, message, audio_length = res
-            
+                
+                if audio_length > max_audio_length:
+                    max_audio_length = audio_length
                 if code == -1:
                     print(message)
                 else:
@@ -65,8 +68,8 @@ def check_data(hf_folder:str, num_worker: int = 4):
             print('Dataset seconds = {}'.format(ds_audio_length))
             print('Dataset minutes = {}'.format(ds_audio_length / 60))
             print('Dataset hours = {}'.format(ds_audio_length / 3600))
-
-            curr_res = {"num_of_row": N, "audio_hours": ds_audio_length / 3600}
+            print('Longest video = {}'.format(max_audio_length))
+            curr_res = {"num_of_row": N, "audio_hours": ds_audio_length / 3600, "max_audio_length": max_audio_length}
             
             if len(split) != 0:
                 stats[split] = curr_res

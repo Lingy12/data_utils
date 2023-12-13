@@ -54,11 +54,13 @@ def check_split_rank(rank, world_size, splits, hf_folder, worker_assigned, queue
         print(prefix + f'total rows = {N}')
         inputs = [(idx, ds) for idx in range(len(ds))]
         ds_audio_length = 0
+        max_audio_length = 0
         split_data = os.path.join(split_path, 'split_stats.json')
         if os.path.exists(split_data):
             with open(split_data, 'r') as f:
                 curr_res = json.load(f)
             ds_audio_length = curr_res['audio_hours'] * 3600
+            max_audio_length = curr_res['max_audio_length']
             print(prefix + '{} data exists, skip checking.'.format(split))
         else:
             with Pool(processes=worker_assigned) as pool:
@@ -66,7 +68,8 @@ def check_split_rank(rank, world_size, splits, hf_folder, worker_assigned, queue
         
             for res in results:
                 code, message, audio_length = res
-            
+                if audio_length > max_audio_length:
+                    max_audio_length = audio_length
                 if code == -1:
                     print(message)
                 else:
@@ -76,8 +79,8 @@ def check_split_rank(rank, world_size, splits, hf_folder, worker_assigned, queue
         print(prefix + 'Dataset seconds = {}'.format(ds_audio_length))
         print(prefix + 'Dataset minutes = {}'.format(ds_audio_length / 60))
         print(prefix + 'Dataset hours = {}'.format(ds_audio_length / 3600))
-
-        curr_res = {"num_of_row": N, "audio_hours": ds_audio_length / 3600}
+        print(prefix + 'Max audio length = {}'.format(max_audio_length))
+        curr_res = {"num_of_row": N, "audio_hours": ds_audio_length / 3600, "max_audio_length": max_audio_length}
 
         with open(os.path.join(split_path, 'split_stats.json'), 'w') as f:
             json.dump(curr_res, indent=1, fp=f)
