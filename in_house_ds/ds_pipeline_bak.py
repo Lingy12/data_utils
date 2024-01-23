@@ -108,7 +108,7 @@ class DataPipeline:
                 # print(grid)
                 start, end, sentence = float(TIME_FORMAT.format(grid.minTime)), float(TIME_FORMAT.format(grid.maxTime)), grid.mark
                 segment_id = '-'.join([speaker, self._transform_number(start), self._transform_number(end)])
-                if len(sentence) == 0 :
+                if len(sentence) == 0 or sentence == '<S>' or sentence == '<Z>':
                     continue
                 seg_lst.append((segment_id, speaker, start, end))
                 text_lst.append((segment_id, sentence))
