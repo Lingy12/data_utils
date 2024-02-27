@@ -13,6 +13,11 @@ def check_entry(args):
         entry = ds[idx]
         sound_arr, sr = entry['audio']['array'], entry['audio']['sampling_rate']
         total_audio_length += len(sound_arr) / sr
+
+        if total_audio_length > 31:
+            print(idx)
+            print(entry)
+            print(total_audio_length)
     except Exception as e:
         return -1, f'Check index {idx}, {e}', 0
     return 0, 'Success', total_audio_length
