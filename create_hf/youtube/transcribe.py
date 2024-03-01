@@ -6,7 +6,7 @@ from pathlib import Path
 from glob import glob
 import whisper
 
-device = 'cpu'
+device = 'cuda'
 torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
 model = whisper.load_model("large-v3",device=device)
 
@@ -28,6 +28,8 @@ def transcribe_folder(folder):
     res_dict = {}
 
     for audio in tqdm(all_audios):
+        if os.path.exists(Path(audio).with_suffix('.txt')):
+            continue
         transcription = transcribe(audio)
 
         res_dict[os.path.basename(Path(audio).with_suffix(''))] = transcription
