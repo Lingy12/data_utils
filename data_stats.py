@@ -1,4 +1,5 @@
 import json
+import sys
 from datasets import load_from_disk
 import fire
 from numpy import array, who
@@ -18,9 +19,10 @@ def check_entry(args):
             print(idx)
             print(entry)
             print(total_audio_length)
+            return 1, f'Long audio at index {idx}', total_audio_length, len(sound_arr), idx, str(entry)
     except Exception as e:
-        return -1, f'Check index {idx}, {e}', 0
-    return 0, 'Success', total_audio_length
+        return -1, f'Check index {idx}, {e}', 0, None, idx, str(entry)
+    return 0, 'Success', total_audio_length, len(sound_arr), idx, str(entry)
 
 def get_all_split(root_hf):
     directories = []
@@ -59,16 +61,23 @@ def check_data(hf_folder:str, num_worker: int = 4):
         max_audio_length = 0
         with Pool(processes=num_worker) as pool:
             results = list(tqdm(pool.imap(check_entry, inputs), total=N))
-        
+            
+            err_idx = []
+            long_idx = {}
+            length_map = {}
             for res in results:
-                code, message, audio_length = res
+                code, message, audio_length, len_audio_arr, index, entry = res
                 
                 if audio_length > max_audio_length:
                     max_audio_length = audio_length
                 if code == -1:
+                    err_idx.append(index) #index has error
                     print(message)
+                if code == 1:
+                    long_idx[index] = {'entry': entry, 'length': audio_length} #long audio
                 else:
                     ds_audio_length += audio_length
+                    length_map[index] = len_audio_arr # only valid audio
             # print(code, message)
             print('Dataset seconds = {}'.format(ds_audio_length))
             print('Dataset minutes = {}'.format(ds_audio_length / 60))
@@ -76,11 +85,25 @@ def check_data(hf_folder:str, num_worker: int = 4):
             print('Longest video = {}'.format(max_audio_length))
             curr_res = {"num_of_row": N, "audio_hours": ds_audio_length / 3600, "max_audio_length": max_audio_length}
             
+            split_folder = os.path.join(hf_folder, split)
+            indexing_file = os.path.join(split_folder, 'indexing.json')
+            long_file = os.path.join(split_folder, 'long_audio.json')
+            with open(indexing_file, 'w') as f:
+                json.dump(length_map, f, indent=1)
+            with open(long_file, 'w') as f:
+                json.dump(long_idx, f, indent=1)
+            if len(err_idx) > 0:
+                print('error exists')
+                error_file = os.path.join(split_folder, 'err.txt')
+                print('check {}'.format(error_file))
+                with open(error_file, 'w') as f:
+                    for idx in err_idx:
+                        f.write(f'{idx}\n')
             if len(split) != 0:
                 stats[split] = curr_res
             else:
                 stats = curr_res
-
+    
     # for idx in tqdm(range(len(ds))):
         # try:
             # _ = ds[idx]
