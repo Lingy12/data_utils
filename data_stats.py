@@ -21,7 +21,7 @@ def check_entry(args):
             print(total_audio_length)
             return 1, f'Long audio at index {idx}', total_audio_length, len(sound_arr), idx, str(entry)
     except Exception as e:
-        return -1, f'Check index {idx}, {e}', 0, None, idx, str(entry)
+        return -1, f'Check index {idx}, {e}', 0, None, idx, ''
     return 0, 'Success', total_audio_length, len(sound_arr), idx, str(entry)
 
 def get_all_split(root_hf):
@@ -92,6 +92,7 @@ def check_data(hf_folder:str, num_worker: int = 4):
                 json.dump(length_map, f, indent=1)
             with open(long_file, 'w') as f:
                 json.dump(long_idx, f, indent=1)
+            
             if len(err_idx) > 0:
                 print('error exists')
                 error_file = os.path.join(split_folder, 'err.txt')
