@@ -108,7 +108,7 @@ def merge_ds(input, sorting_cols:List[str], output_path, batch_size=100, workers
     ds = ds.map(merger_funct, batched=True, num_proc=workers, batch_size=batch_size, 
                 remove_columns=ds.column_names, features=features)
 
-    ds.save_to_disk(output_path)
+    ds.save_to_disk(output_path, num_proc=workers)
 
 if __name__ == "__main__":
     fire.Fire(merge_ds)
