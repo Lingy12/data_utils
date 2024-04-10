@@ -94,7 +94,9 @@ def merge_ds(input, sorting_cols:List[str], output_path, batch_size=100, workers
     print(ds)
     def sort_ds(cols, ds):
         return ds.sort(cols)
-
+    columns_to_keep = sorting_cols + ['sentence', 'audio']
+    ds = ds.select_columns(columns_to_keep)
+    print(ds)
     ds = sort_ds(sorting_cols, ds)
     ds = ds.cast_column('audio', Audio(sampling_rate=16000))
     merger_funct = MergeTransform(sorting_cols=sorting_cols, sampling_rate=16000, enable_random_start=True)
