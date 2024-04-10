@@ -70,6 +70,7 @@ def merge_ds(ds_path, sorting_cols: List[str], grouping_cols: List[str], output_
 
     print("Sorting columns: ", sorting_cols)
     ds = load_from_disk(ds_path)
+    ds = ds.cast_column('audio', Audio(sampling_rate=16000))
     print('Data schema: ', ds)
 
     ds = ds.sort(list(sorting_cols))

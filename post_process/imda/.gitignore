@@ -1,0 +1,5 @@
+imda_dev/
+part*
+test/
+*.log
+

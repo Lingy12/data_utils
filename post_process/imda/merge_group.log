@@ -1,0 +1,7 @@
+Sorting columns:  ('speaker', 'session', 'channel')
+Data schema:  Dataset({
+    features: ['channel', 'speaker', 'session', 'audio', 'sentence'],
+    num_rows: 2269064
+})
+Dataset sorted according to:  ('speaker', 'session', 'channel')
+('speaker',)
