@@ -10,6 +10,10 @@ def load_json(path):
     return data
 
 def filter_long_and_err(ds, ds_dir):
+    if not os.path.exists(os.path.join(ds_dir, 'err.txt')) and os.path.exists(os.path.join(ds_dir, 'err.txt')):
+        print('No index to filter')
+        return ds
+    
     long_indexing = load_json(os.path.join(ds_dir, 'long_audio.json'))
     long_indices = long_indexing.keys()
     
