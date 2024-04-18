@@ -26,14 +26,15 @@ def download_audio(video_metadata, id_to_title, output_path):
     
     # Add to dictionary
     id_to_title[video_id] = video_title
-
+    
+    output_filename = os.path.join(output_path, f"{video_id}.mp3")
     # Command to download only audio and save as MP3
     download_command = [
         'yt-dlp',
         '-x',  # Extract audio
         '--audio-format', 'mp3',  # Set audio format to mp3
         '--audio-quality', '0',  # Set the best audio quality
-        '-o', f'{video_id}.%(ext)s',  # Output filename template using video ID
+        '-o', output_filename,  # Output filename template using video ID
         metadata['url']
     ]
 
