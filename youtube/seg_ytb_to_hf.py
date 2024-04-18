@@ -12,7 +12,7 @@ def split_audio(raw_audio, sampling_rate):
     step = sampling_rate * 30
     n = len(raw_array)
     # print(raw_array)
-    return [{"audio": raw_array[i * step: min((i + 1) * step, n)], "sampling_rate": sampling_rate} for i in range(total_segment)]
+    return [{"array": raw_array[i * step: min((i + 1) * step, n)], "sampling_rate": sampling_rate} for i in range(total_segment)]
 
 # split for unsupervised dataset
 @dataclass
@@ -32,11 +32,13 @@ class SegmenteAudio(object):
             output_batch['segment_id'].extend(list(range(len(curr_split))))
             for k in keep_keys:
                 output_batch[k].extend([batch[k][i]] * len(curr_split))
+        # print(output_batch)
         return output_batch
     
     
 def segment_ytb_to_hf(raw_folder, output_path, batch_size=10, workers=4):
     
+    os.makedirs(output_path, exist_ok=True)
     ori_dict = {"audio": [], "parent": [], "sentence": [], "ytb_id": []}
     
         # Iterate through all files in the raw_folder directory
@@ -58,7 +60,7 @@ def segment_ytb_to_hf(raw_folder, output_path, batch_size=10, workers=4):
                 ori_dict["sentence"].append("")  # Assuming 'sentence' to be filled later or elsewhere
                 ori_dict["ytb_id"].append(ytb_id)
     
-    print(ori_dict)
+    # print(ori_dict)
     ori_ds = Dataset.from_dict(ori_dict)
     ori_ds = ori_ds.cast_column('audio', Audio(sampling_rate=16000))
     split_funct = SegmenteAudio(sampling_rate=16000)
