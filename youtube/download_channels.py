@@ -44,6 +44,8 @@ def worker_process(channel_url, output_path, workers=4, local_rank=0, num_ranks=
     video_metadata = fetch_video_metadata(channel_url)
     # Determine the segment of data this rank will handle
     # Create output path if it doesn't exist
+    # print(len(video_metadata))
+    # exit()
     if not os.path.exists(output_path):
         os.makedirs(output_path)
 

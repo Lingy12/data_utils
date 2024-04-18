@@ -2,7 +2,6 @@ channel=$1
 output_path=$2
 num_of_node=$3 # at most 15
 
-m
 # Ensuring num_of_node does not exceed 15
 if [ "$num_of_node" -gt 15 ]; then
   echo "num_of_node cannot be greater than 15"
