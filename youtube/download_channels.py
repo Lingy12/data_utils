@@ -22,8 +22,8 @@ def fetch_video_metadata(channel_url):
 def download_audio(args):
     metadata, output_path = args
     metadata = json.loads(metadata)
+    # # print(metadata)
     # print(metadata)
-    print(metadata)
     video_id = metadata['id']
     output_filename = os.path.join(output_path, f"{video_id}.mp3")
     download_command = [
@@ -40,7 +40,7 @@ def download_audio(args):
         return f"Failed to download {output_filename}", metadata
     return f"Downloaded {output_filename}", metadata
 
-def worker_process(channel_url, output_path, num_workers=4, local_rank=0, num_ranks=1):
+def worker_process(channel_url, output_path, workers=4, local_rank=0, num_ranks=1):
     video_metadata = fetch_video_metadata(channel_url)
     # Determine the segment of data this rank will handle
     # Create output path if it doesn't exist
@@ -61,7 +61,7 @@ def worker_process(channel_url, output_path, num_workers=4, local_rank=0, num_ra
 
     params = [(metadata, output_path) for metadata in subset_metadata]
     # Use multiprocessing to download videos in parallel
-    with Pool(processes=num_workers) as pool:
+    with Pool(processes=workers) as pool:
         results = list(tqdm(pool.imap_unordered(download_audio, params),
                             total=len(subset_metadata), desc=f"Downloading videos for rank {local_rank}"))
     processed_metadata = [res[1] for res in results]
