@@ -1,7 +1,9 @@
-import subprocess
 import json
-import os
 import fire
+import subprocess
+import os
+from multiprocessing import Pool
+from tqdm import tqdm
 
 def fetch_video_metadata(channel_url):
     # Command to fetch video metadata
@@ -17,18 +19,13 @@ def fetch_video_metadata(channel_url):
     video_data = result.stdout.strip().split('\n')
     return video_data
 
-def download_audio(video_metadata, id_to_title, output_path):
-    # Parse metadata
-    import json
-    metadata = json.loads(video_metadata)
+def download_audio(args):
+    metadata, output_path = args
+    metadata = json.loads(metadata)
+    # print(metadata)
+    print(metadata)
     video_id = metadata['id']
-    video_title = metadata['title']
-    
-    # Add to dictionary
-    id_to_title[video_id] = video_title
-    
     output_filename = os.path.join(output_path, f"{video_id}.mp3")
-    # Command to download only audio and save as MP3
     download_command = [
         'yt-dlp',
         '-x',  # Extract audio
@@ -37,31 +34,43 @@ def download_audio(video_metadata, id_to_title, output_path):
         '-o', output_filename,  # Output filename template using video ID
         metadata['url']
     ]
+    status = subprocess.run(download_command)
+    if status.returncode != 0:
+        print('download fail')
+        return f"Failed to download {output_filename}", metadata
+    return f"Downloaded {output_filename}", metadata
 
-    # Execute the download command
-    subprocess.run(download_command)
-    print(f"Downloaded {video_id}.mp3")
-
-def download_videos(channel_url, output_path):
-    # Fetch video metadata
-    video_metadatas = fetch_video_metadata(channel_url)
+def worker_process(channel_url, output_path, num_workers=4, local_rank=0, num_ranks=1):
+    video_metadata = fetch_video_metadata(channel_url)
+    # Determine the segment of data this rank will handle
+    # Create output path if it doesn't exist
     if not os.path.exists(output_path):
         os.makedirs(output_path)
 
-    # Dictionary to store ID to title mapping
-    id_to_title = {}
+    segment_size = len(video_metadata) // num_ranks
+    start_index = local_rank * segment_size
+    end_index = (local_rank + 1) * segment_size if (local_rank + 1) < num_ranks else len(video_metadata)
 
-    # Download audio for each video
-    for video_metadata in video_metadatas:
-        download_audio(video_metadata, id_to_title, output_path)
+    # Subset of metadata for this rank
+    subset_metadata = video_metadata[start_index:end_index]
 
-    # Print or save the dictionary as needed
-    print(id_to_title)
-    # Optionally, save to a file
-    json_path = os.path.join(output_path, 'id_to_title_mapping.json')
-    with open(json_path, 'w') as f:
-        json.dump(id_to_title, f, indent=4)
+    # Save the subset metadata to a JSON file for this rank
+    subset_metadata_path = os.path.join(output_path, f'metadata_rank_{local_rank}.json')
+    with open(subset_metadata_path, 'w') as f:
+        json.dump(subset_metadata, f, indent=4)
 
+    params = [(metadata, output_path) for metadata in subset_metadata]
+    # Use multiprocessing to download videos in parallel
+    with Pool(processes=num_workers) as pool:
+        results = list(tqdm(pool.imap_unordered(download_audio, params),
+                            total=len(subset_metadata), desc=f"Downloading videos for rank {local_rank}"))
+    processed_metadata = [res[1] for res in results]
+
+    subset_metadata_path = os.path.join(output_path, f'processed_metadata_rank_{local_rank}.json')
+    with open(subset_metadata_path, 'w') as f:
+        json.dump(processed_metadata, f, indent=4)
+    return results
 
 if __name__ == "__main__":
-    fire.Fire(download_videos)
+    # Example parameters
+    fire.Fire(worker_process)
