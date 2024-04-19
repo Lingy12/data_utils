@@ -10,7 +10,6 @@ import string
 def fetch_video_metadata(channel_url):
     command = [
         'yt-dlp',
-        '--cookies', 'cookies.txt',
         '--dump-json',  # Get metadata in JSON format
         '--flat-playlist',
         channel_url
@@ -31,7 +30,6 @@ def download_audio(args):
     download_command = [
         'yt-dlp',
         '-x',  # Extract audio
-        '--cookies', 'cookies.txt',
         '--audio-format', 'mp3',  # Set audio format to mp3
         '--audio-quality', '0',  # Set the best audio quality
         '-o', output_filename,  # Output filename template using video ID
