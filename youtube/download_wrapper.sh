@@ -19,4 +19,4 @@ echo "Channel = $channel"
 echo "local_rank=$local_rank"
 echo "num nodes = $num_of_node" 
 # Execute the Python script
-python download_channels.py $channel $output_path --workers 16 --local_rank $local_rank --num_ranks $num_of_node
+python download_channels.py $channel $output_path --workers 16 --local_rank $local_rank --num_ranks $num_of_node --max_files_in_folder 100
