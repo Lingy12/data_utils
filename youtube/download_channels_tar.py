@@ -59,17 +59,31 @@ def worker_process(channel_url, output_path, workers=4, local_rank=0, num_ranks=
     tar_filename = os.path.join(output_path, f'{local_rank}.tar')
     results = []
     with Pool(processes=workers) as pool:
-        params = [(metadata, folder) for metadata, folder in zip(subset_metadata, folder_assignments)]
         results = list(tqdm(pool.imap_unordered(download_audio, subset_metadata),
                             total=len(subset_metadata), desc=f"Downloading videos for rank {local_rank}"))
 
     with tarfile.open(tar_filename, "w") as tar:
+        # Add original metadata to the tar
+        original_meta = io.BytesIO(json.dumps(subset_metadata).encode('utf-8'))
+        tarinfo = tarfile.TarInfo(name=f"{local_rank}/metadata_rank_{local_rank}.json")
+        tarinfo.size = len(original_meta.getvalue())
+        tar.addfile(tarinfo, original_meta)
+
+        # Process results and metadata
+        processed_metadata = []
         for (filename, audio_data, metadata), folder in zip(results, folder_assignments):
             if audio_data:
                 full_path = os.path.join(f"{local_rank}", folder, filename)
                 tarinfo = tarfile.TarInfo(name=full_path)
                 tarinfo.size = len(audio_data)
                 tar.addfile(tarinfo, io.BytesIO(audio_data))
+                processed_metadata.append(metadata)
+
+        # Add processed metadata to the tar
+        processed_meta = io.BytesIO(json.dumps(processed_metadata, indent=4).encode('utf-8'))
+        tarinfo = tarfile.TarInfo(name=f"{local_rank}/processed_metadata_rank_{local_rank}.json")
+        tarinfo.size = len(processed_meta.getvalue())
+        tar.addfile(tarinfo, processed_meta)
 
 if __name__ == "__main__":
     fire.Fire(worker_process)
