@@ -12,7 +12,8 @@ def fetch_video_metadata(channel_url):
         'yt-dlp',
         '--dump-json',  # Get metadata in JSON format
         '--flat-playlist',
-        channel_url
+        channel_url,
+        '--cookies', "./cookies.txt"
     ]
     result = subprocess.run(command, stdout=subprocess.PIPE, text=True)
     video_data = result.stdout.strip().split('\n')
@@ -33,7 +34,8 @@ def download_audio(args):
         '--audio-format', 'mp3',  # Set audio format to mp3
         '--audio-quality', '0',  # Set the best audio quality
         '-o', output_filename,  # Output filename template using video ID
-        metadata['url']
+        metadata['url'],
+        '--cookies', "./cookies.txt"
     ]
     status = subprocess.run(download_command)
     if status.returncode != 0:
