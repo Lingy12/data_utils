@@ -13,7 +13,7 @@ source /data/projects/13003565/geyu/miniconda3/etc/profile.d/conda.sh
 conda activate base
 echo "Virtual environment activated"
 
-cd /home/project/13003826/geyu/data_utils/youtube
+cd $PBS_O_WORKDIR
 
 echo "Channel = $channel"
 echo "local_rank=$local_rank"
