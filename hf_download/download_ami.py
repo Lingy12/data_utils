@@ -10,11 +10,12 @@ def download_ds(dest1: str, dest2: str, num_worker:int = 4):
     print('Dataset loaded')
 
     print('Saving dataset...')
-    ds1.save_to_disk(dest1, num_proc=num_worker)
-    ds2.save_to_disk(dest2, num_proc=num_worker)
+    ds_1.save_to_disk(dest1, num_proc=num_worker)
+    ds_2.save_to_disk(dest2, num_proc=num_worker)
     print('Dataset saved.')
 
-    ds.cleanup_cache_files()
+    ds_1.cleanup_cache_files()
+    ds_2.cleanup_cache_files()
     print('Local cache cleared')
 
 if __name__ == "__main__":

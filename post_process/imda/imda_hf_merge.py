@@ -78,14 +78,14 @@ class MergeTransform(object):
     # return batch
 
 
-def merge_ds(input, sorting_cols:List[str], output_path, batch_size=100, workers=4):
+def merge_ds(input_path, sorting_cols:List[str], output_path, batch_size=100, workers=4):
 
     if os.path.exists(output_path):
         flag = input('Path already exists, enter y to overwrite')
         if flag != 'y':
             return
 
-    ds = load_from_disk(input)
+    ds = load_from_disk(input_path)
     
     sorting_cols = list(sorting_cols)
     print(sorting_cols)
