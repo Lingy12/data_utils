@@ -19,7 +19,7 @@ def process_subfolder(args):
     for file in tqdm(sorted(os.listdir(subdir))):
         if file.endswith('.wav'):
             file_path = os.path.join(subdir, file)
-            audio = AudioSegment.from_file(file_path, format='mp3')
+            audio = AudioSegment.from_file(file_path, format='mp4')
 
             length_audio = len(audio)
             start = 0
