@@ -33,6 +33,7 @@ def download_audio(args):
         '-x',  # Extract audio
         '--audio-format', 'mp3',  # Set audio format to mp3
         '--audio-quality', '0',  # Set the best audio quality
+        '--postprocessor-args', "ffmpeg:-ar 16000",  # Set audio sampling rate to 16000Hz
         '-o', output_filename,  # Output filename template using video ID
         metadata['url'],
         '--cookies', "./cookies.txt"

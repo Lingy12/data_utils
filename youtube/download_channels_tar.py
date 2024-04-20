@@ -28,6 +28,7 @@ def download_audio(metadata):
         'yt-dlp',
         '-x',
         '--audio-format', 'mp3',
+        '--postprocessor-args', "ffmpeg:-ar 16000",  # Set audio sampling rate to 16000Hz
         '--audio-quality', '0',
         '--output', '-',  # Output to stdout
         metadata['url'],
