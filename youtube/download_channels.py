@@ -4,35 +4,54 @@ import subprocess
 import os
 from multiprocessing import Pool
 from tqdm import tqdm
+import random
 import time
+
 class VideoDownloader:
     def __init__(self):
-        return 
+        self.proxies = [
+            'http://13.229.126.191:80',
+            ''
+        ]
+        return
+
+    def select_proxy(self):
+        return random.choice(self.proxies)
+
 
     def fetch_video_metadata(self, channel_url, output_path):
-        command = [
+        proxy = self.select_proxy()
+        if not os.path.exists(output_path):
+            os.makedirs(output_path)
+
+        max_retries = 5
+        for attempt in range(max_retries):
+            command = [
             'yt-dlp',
             '--dump-json',
             '--flat-playlist',
             '-4',
+            '--proxy', proxy,
             channel_url,
             '--cookies', './cookies.txt'
         ]
-        
-        if not os.path.exists(output_path):
-            os.makedirs(output_path)
-        result = subprocess.run(command, stdout=subprocess.PIPE, text=True)
-        if result.returncode != 0:
-            print('fail to fetch')
-            return 
-        video_data = result.stdout.strip().split('\n')
-        
-        metadata_path = os.path.join(output_path, 'metadata.json')
-        if len(video_data) > 5:
-            with open(metadata_path, 'w') as f:
-                    json.dump(video_data, f, indent=4)
 
-        return metadata_path
+            result = subprocess.run(command, stdout=subprocess.PIPE, text=True)
+            if result.returncode == 0:
+                video_data = result.stdout.strip().split('\n')
+                metadata_path = os.path.join(output_path, 'metadata.json')
+                if len(video_data) > 5:
+                    with open(metadata_path, 'w') as f:
+                        json.dump(video_data, f, indent=4)
+                return metadata_path
+            else:
+                if attempt < max_retries - 1:
+                    print(f"Attempt {attempt + 1} failed to fetch metadata, retrying with another proxy...")
+                    time.sleep(1)
+                    proxy = self.select_proxy()  # Switch proxy for next attempt
+
+        print('Failed to fetch metadata after several attempts.')
+        return None
 
 
     def download_audio(self, args):
@@ -45,20 +64,20 @@ class VideoDownloader:
             metadata['status'] = 'already exists'
             return {"status": "success", "file": output_filename, "metadata": metadata}
 
-        download_command = [
+        max_retries = 10
+        for attempt in range(max_retries):
+            download_command = [
             'yt-dlp',
             '-x',
             '--audio-format', 'mp3',
             '--audio-quality', '5',
             '--postprocessor-args', "ffmpeg:-ar 16000",
             '-o', output_filename,
+            '--proxy', self.select_proxy(),
             '-4', 
             metadata['url'],
              '--cookies', './cookies.txt'
         ]
-
-        max_retries = 10
-        for attempt in range(max_retries):
             status = subprocess.run(download_command)
             if status.returncode == 0:
                 return {"status": "success", "file": output_filename, "metadata": metadata}

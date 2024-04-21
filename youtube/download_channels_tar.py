@@ -6,6 +6,7 @@ from multiprocessing import Pool
 from tqdm import tqdm
 import tarfile
 import io
+import time
 
 class VideoDownloader:
     def __init__(self):
