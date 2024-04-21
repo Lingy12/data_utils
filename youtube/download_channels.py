@@ -21,11 +21,15 @@ class VideoDownloader:
         if not os.path.exists(output_path):
             os.makedirs(output_path)
         result = subprocess.run(command, stdout=subprocess.PIPE, text=True)
+        if result.returncode != 0:
+            print('fail to fetch')
+            return 
         video_data = result.stdout.strip().split('\n')
         
         metadata_path = os.path.join(output_path, 'metadata.json')
-        with open(metadata_path, 'w') as f:
-            json.dump(video_data, f, indent=4)
+        if len(video_data) > 5:
+            with open(metadata_path, 'w') as f:
+                    json.dump(video_data, f, indent=4)
 
         return metadata_path
 
@@ -34,6 +38,10 @@ class VideoDownloader:
         metadata = json.loads(metadata)
         video_id = metadata['id']
         output_filename = os.path.join(output_path, f"{video_id}.mp3")
+
+        if os.path.exists(output_filename):
+            metadata['status'] = 'already exists'
+            return {"status": "success", "file": output_filename, "metadata": metadata}
         download_command = [
             'yt-dlp',
             '-x',
@@ -51,7 +59,11 @@ class VideoDownloader:
             return {"status": "failed", "file": output_filename, "metadata": metadata}
 
     def worker_process(self, output_path, workers=4, local_rank=0, num_ranks=1, max_files_in_folder=100):
-        with open(os.path.join(output_path, 'metadata.json'), 'r') as f:
+        meta_data_file = os.path.join(output_path, 'metadata.json')
+        if not os.path.exists(meta_data_file):
+            print('please build metadata first.')
+            return
+        with open(meta_data_file, 'r') as f:
             video_metadata = json.load(f)
 
         if not os.path.exists(output_path):
