@@ -14,8 +14,9 @@ class VideoDownloader:
             'yt-dlp',
             '--dump-json',
             '--flat-playlist',
+            '-4',
             channel_url,
-            '--cookies', 'cookies.txt'
+            '--cookies', './cookies.txt'
         ]
         
         if not os.path.exists(output_path):
@@ -51,8 +52,9 @@ class VideoDownloader:
             '--audio-quality', '5',
             '--postprocessor-args', "ffmpeg:-ar 16000",
             '-o', output_filename,
+            '-4', 
             metadata['url'],
-            '--cookies', 'cookies.txt'
+             '--cookies', './cookies.txt'
         ]
 
         max_retries = 10
@@ -63,7 +65,7 @@ class VideoDownloader:
             else:
                 if attempt < max_retries - 1:  # Avoid sleep after the last attempt
                     print(f"Attempt {attempt + 1} failed, retrying...")
-                    time.sleep(5)  # Wait for 5 seconds before retrying
+                    time.sleep(1)  # Wait for 5 seconds before retrying
 
         return {"status": "failed", "file": output_filename, "metadata": metadata}
 
