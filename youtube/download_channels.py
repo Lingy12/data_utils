@@ -4,7 +4,7 @@ import subprocess
 import os
 from multiprocessing import Pool
 from tqdm import tqdm
-
+import time
 class VideoDownloader:
     def __init__(self):
         return 
@@ -33,6 +33,7 @@ class VideoDownloader:
 
         return metadata_path
 
+
     def download_audio(self, args):
         metadata, output_path = args
         metadata = json.loads(metadata)
@@ -42,21 +43,29 @@ class VideoDownloader:
         if os.path.exists(output_filename):
             metadata['status'] = 'already exists'
             return {"status": "success", "file": output_filename, "metadata": metadata}
+
         download_command = [
             'yt-dlp',
             '-x',
             '--audio-format', 'mp3',
-            '--audio-quality', '0',
+            '--audio-quality', '5',
             '--postprocessor-args', "ffmpeg:-ar 16000",
             '-o', output_filename,
             metadata['url'],
             '--cookies', 'cookies.txt'
         ]
-        status = subprocess.run(download_command)
-        if status.returncode == 0:
-            return {"status": "success", "file": output_filename, "metadata": metadata}
-        else:
-            return {"status": "failed", "file": output_filename, "metadata": metadata}
+
+        max_retries = 10
+        for attempt in range(max_retries):
+            status = subprocess.run(download_command)
+            if status.returncode == 0:
+                return {"status": "success", "file": output_filename, "metadata": metadata}
+            else:
+                if attempt < max_retries - 1:  # Avoid sleep after the last attempt
+                    print(f"Attempt {attempt + 1} failed, retrying...")
+                    time.sleep(5)  # Wait for 5 seconds before retrying
+
+        return {"status": "failed", "file": output_filename, "metadata": metadata}
 
     def worker_process(self, output_path, workers=4, local_rank=0, num_ranks=1, max_files_in_folder=100):
         meta_data_file = os.path.join(output_path, 'metadata.json')
