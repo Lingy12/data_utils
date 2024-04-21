@@ -7,84 +7,103 @@ from tqdm import tqdm
 import tarfile
 import io
 
-def fetch_video_metadata(channel_url):
-    command = [
-        'yt-dlp',
-        '--dump-json',
-        '--flat-playlist',
-        channel_url,
-        '--cookies', "./cookies.txt"
-    ]
-    result = subprocess.run(command, stdout=subprocess.PIPE, text=True)
-    video_data = result.stdout.strip().split('\n')
-    return video_data
+class VideoDownloader:
+    def __init__(self):
+        return
 
-def download_audio(metadata):
-    metadata = json.loads(metadata)
-    video_id = metadata['id']
-    output_filename = f"{video_id}.mp3"
+    def fetch_video_metadata(self, channel_url, output_path):
+        command = [
+            'yt-dlp',
+            '--dump-json',
+            '--flat-playlist',
+            '-4',
+            channel_url,
+            '--cookies', './cookies.txt'
+        ]
+        if not os.path.exists(output_path):
+            os.makedirs(output_path)
+        result = subprocess.run(command, stdout=subprocess.PIPE, text=True)
+        if result.returncode != 0:
+            print('Fail to fetch')
+            return
+        video_data = result.stdout.strip().split('\n')
 
-    download_command = [
-        'yt-dlp',
-        '-x',
-        '--audio-format', 'mp3',
-        '--postprocessor-args', "ffmpeg:-ar 16000",  # Set audio sampling rate to 16000Hz
-        '--audio-quality', '0',
-        '--output', '-',  # Output to stdout
-        metadata['url'],
-        '--cookies', "./cookies.txt"
-    ]
-    process = subprocess.Popen(download_command, stdout=subprocess.PIPE)
-    audio_data, _ = process.communicate()
+        metadata_path = os.path.join(output_path, 'metadata.json')
+        if len(video_data) > 5:
+            with open(metadata_path, 'w') as f:
+                json.dump(video_data, f, indent=4)
+        return metadata_path
 
-    if process.returncode == 0:
-        return output_filename, audio_data, metadata
-    else:
-        return output_filename, None, metadata
+    def download_audio(self, metadata, output_subfolder):
+        metadata = json.loads(metadata)
+        video_id = metadata['id']
+        output_filename = f"{video_id}.mp3"
+        full_path = os.path.join(output_subfolder, output_filename)
 
-def worker_process(channel_url, output_path, workers=4, local_rank=0, num_ranks=1, max_files_in_folder=100):
-    video_metadata = fetch_video_metadata(channel_url)
-    segment_size = len(video_metadata) // num_ranks
-    start_index = local_rank * segment_size
-    end_index = (local_rank + 1) * segment_size if (local_rank + 1) < num_ranks else len(video_metadata)
-    subset_metadata = video_metadata[start_index:end_index]
+        if os.path.exists(full_path):
+            return output_subfolder, output_filename, None, metadata  # Skip download if file already exists
 
-    # Ensure the output path exists
-    os.makedirs(output_path, exist_ok=True)
+        download_command = [
+            'yt-dlp',
+            '-x',
+            '--audio-format', 'mp3',
+            '--audio-quality', '5',
+            '--postprocessor-args', "ffmpeg:-ar 16000",
+            '-o', '-',  # Output to stdout
+            '-4',
+            metadata['url'],
+            '--cookies', './cookies.txt'
+        ]
 
-    # Create subfolder paths for each video
-    num_subfolders = (len(subset_metadata) + max_files_in_folder - 1) // max_files_in_folder
-    subfolder_names = [(chr(65 + i//26) + chr(65 + i%26)) for i in range(num_subfolders)]
-    folder_assignments = [subfolder_names[i % num_subfolders] for i in range(len(subset_metadata))]
+        max_retries = 3  # Number of retries for downloading
+        for attempt in range(max_retries):
+            process = subprocess.Popen(download_command, stdout=subprocess.PIPE)
+            audio_data, _ = process.communicate()
 
-    tar_filename = os.path.join(output_path, f'{local_rank}.tar')
-    results = []
-    with Pool(processes=workers) as pool:
-        results = list(tqdm(pool.imap_unordered(download_audio, subset_metadata),
-                            total=len(subset_metadata), desc=f"Downloading videos for rank {local_rank}"))
+            if process.returncode == 0:
+                return output_subfolder, output_filename, audio_data, metadata
+            else:
+                if attempt < max_retries - 1:
+                    print(f"Attempt {attempt + 1} failed, retrying...")
+                    time.sleep(5)  # Wait for 5 seconds before retrying
 
-    with tarfile.open(tar_filename, "w") as tar:
-        # Add original metadata to the tar
-        original_meta = io.BytesIO(json.dumps(subset_metadata).encode('utf-8'))
-        tarinfo = tarfile.TarInfo(name=f"{local_rank}/metadata_rank_{local_rank}.json")
-        tarinfo.size = len(original_meta.getvalue())
-        tar.addfile(tarinfo, original_meta)
+        return output_subfolder, output_filename, None, metadata  # Return None if all retries fail
 
-        # Process results and metadata
-        processed_metadata = []
-        for (filename, audio_data, metadata), folder in zip(results, folder_assignments):
-            if audio_data:
-                full_path = os.path.join(f"{local_rank}", folder, filename)
-                tarinfo = tarfile.TarInfo(name=full_path)
-                tarinfo.size = len(audio_data)
-                tar.addfile(tarinfo, io.BytesIO(audio_data))
-                processed_metadata.append(metadata)
+    def worker_process(self, output_path, channel_url, workers=4, local_rank=0, num_ranks=1, max_files_in_folder=100):
+        metadata_path = self.fetch_video_metadata(channel_url, output_path)
+        if not metadata_path:
+            print('Metadata not available')
+            return
 
-        # Add processed metadata to the tar
-        processed_meta = io.BytesIO(json.dumps(processed_metadata, indent=4).encode('utf-8'))
-        tarinfo = tarfile.TarInfo(name=f"{local_rank}/processed_metadata_rank_{local_rank}.json")
-        tarinfo.size = len(processed_meta.getvalue())
-        tar.addfile(tarinfo, processed_meta)
+        with open(metadata_path, 'r') as f:
+            video_metadata = json.load(f)
+
+        segment_size = len(video_metadata) // num_ranks
+        start_index = local_rank * segment_size
+        end_index = (local_rank + 1) * segment_size if (local_rank + 1) < num_ranks else len(video_metadata)
+        subset_metadata = video_metadata[start_index:end_index]
+
+        num_subfolders = (len(subset_metadata) + max_files_in_folder - 1) // max_files_in_folder
+        subfolder_names = [(chr(65 + i//26) + chr(65 + i%26)) for i in range(num_subfolders)]
+        folder_assignments = [os.path.join(str(local_rank), subfolder_names[i % num_subfolders]) for i in range(len(subset_metadata))]
+        tasks = [(metadata, folder) for metadata, folder in zip(subset_metadata, folder_assignments)]
+
+        tar_filename = os.path.join(output_path, f'{local_rank}.tar')
+        with tarfile.open(tar_filename, "w") as tar:
+            with Pool(processes=workers) as pool:
+                for result in tqdm(pool.starmap(self.download_audio, tasks), total=len(subset_metadata), desc=f"Downloading videos for rank {local_rank}"):
+                    output_subfolder, filename, audio_data, metadata = result
+                    if audio_data:  # Only add to tar if download was successful
+                        full_path = os.path.join(output_subfolder, filename)
+                        tarinfo = tarfile.TarInfo(name=full_path)
+                        tarinfo.size = len(audio_data)
+                        tar.addfile(tarinfo, io.BytesIO(audio_data))
+
+                        # Add individual metadata files into the tar as well
+                        metadata_content = json.dumps(metadata, indent=4).encode('utf-8')
+                        meta_tarinfo = tarfile.TarInfo(name=f"{full_path}_metadata.json")
+                        meta_tarinfo.size = len(metadata_content)
+                        tar.addfile(meta_tarinfo, io.BytesIO(metadata_content))
 
 if __name__ == "__main__":
-    fire.Fire(worker_process)
+    fire.Fire(VideoDownloader)
