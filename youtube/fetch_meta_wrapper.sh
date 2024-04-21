@@ -15,8 +15,5 @@ echo "Virtual environment activated"
 
 cd $PBS_O_WORKDIR
 
-echo "Channel = $channel"
-echo "local_rank=$local_rank"
-echo "num nodes = $num_of_node" 
 # Execute the Python script
-python download_channels.py worker_process $output_path --workers 16 --local_rank $local_rank --num_ranks $num_of_node --max_files_in_folder 100
+python download_channels.py fetch_video_metadata $channel $output_path
