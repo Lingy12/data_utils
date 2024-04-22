@@ -33,7 +33,6 @@ class VideoDownloader:
             '-4',
             '--proxy', proxy,
             channel_url,
-            '--cookies', './cookies.txt'
         ]
 
             result = subprocess.run(command, stdout=subprocess.PIPE, text=True)
@@ -76,7 +75,6 @@ class VideoDownloader:
             '--proxy', self.select_proxy(),
             '-4', 
             metadata['url'],
-             '--cookies', './cookies.txt'
         ]
             status = subprocess.run(download_command)
             if status.returncode == 0:
