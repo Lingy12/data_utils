@@ -41,6 +41,14 @@ def submit_all_job(job_config_lst: List[str], root_path, num_of_nodes=15):
     failed_jobs = 0
     batch_start = time.time()
     submitted_folder = []
+    
+    logging.info('Check oauth2')
+    commands = ['yt-dlp', '-F', 'https://www.youtube.com/watch?v=2tM1LFFxeKg', '--username', 'oauth2', '--password', '']
+    runres = subprocess.run(commands)
+    if runres.returncode != 0:
+        logging.error('Cannot auth')
+        return
+    logging.info('Auth2 passed')
     for job in job_config_lst:
         logging.info(f"Processing job file: {job}")
 

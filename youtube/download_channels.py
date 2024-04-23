@@ -10,7 +10,7 @@ import time
 class VideoDownloader:
     def __init__(self):
         self.proxies = [
-            'http://13.229.126.191:80',
+            # 'http://13.229.126.191:80',
             ''
         ]
         return
@@ -31,7 +31,7 @@ class VideoDownloader:
             '--flat-playlist',
             '-4',
              '--proxy', self.select_proxy() if attempt > 0 else '',
-            '--cookies', 'cookies.txt',
+            '--username', 'oauth2', '--password', '',
             channel_url,
         ]
 
@@ -73,7 +73,7 @@ class VideoDownloader:
             '-o', output_filename,
             '--proxy', self.select_proxy() if attempt > 0 else '',
             '-4', 
-            '--cookies', 'cookies.txt',
+            '--username', 'oauth2', '--password', '',
             metadata['url'],
         ]
             status = subprocess.run(download_command)
