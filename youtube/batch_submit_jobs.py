@@ -4,10 +4,19 @@ import os
 import subprocess
 import logging
 import time
+from glob import glob
+from aggregate_download_status import aggregate_counts
 
 # Setup logging configuration
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+def remove_files_recursively(start_path, pattern):
+    # Search for files matching the pattern recursively
+    for filename in glob(os.path.join(start_path, '**', pattern), recursive=True):
+        # Remove each file found
+        os.remove(filename)
+        logging.info(f'Removed: {filename}')
+        
 def check_job_count(max_jobs=80):
     try:
         # Run qstat and pipe the output to wc -l
@@ -30,7 +39,8 @@ def submit_all_job(job_config_lst: List[str], root_path, num_of_nodes=15):
     total_jobs = 0
     successful_jobs = 0
     failed_jobs = 0
-
+    batch_start = time.time()
+    submitted_folder = []
     for job in job_config_lst:
         logging.info(f"Processing job file: {job}")
 
@@ -39,6 +49,19 @@ def submit_all_job(job_config_lst: List[str], root_path, num_of_nodes=15):
         
         for channel in channels_conf[1:]:
             # print(channel)
+            logging.info('Checking for connection health...')
+            for f in submitted_folder:
+                check_res = aggregate_counts(f)
+                if check_res['fail_count'] > 0.1 * check_res['success_count'] :
+                    logging.warning(f'A lot of jobs are failing in {f}, exiting and killing all jobs. Please consider update cookie or add proxy.')
+                          # Run qstat and pipe the output to wc -l
+                    p1 = subprocess.Popen(["qselect", '-u', 'lingy'], stdout=subprocess.PIPE)
+                    p2 = subprocess.Popen(["xargs", "qdel"], stdin=p1.stdout, stdout=subprocess.PIPE, text=True)
+                    p1.stdout.close()  # Allow p1 to receive a SIGPIPE if p2 exits.
+                    output, _ = p2.communicate()
+                    print(f'Lifetime = {time.time() - batch_start}')
+                    exit()
+            logging.info('Connection health check passed.')
             if not check_job_count():
                 logging.warning("Job submission paused due to max job count reached. Waiting for slots to free up.")
                 while not check_job_count():
@@ -50,6 +73,15 @@ def submit_all_job(job_config_lst: List[str], root_path, num_of_nodes=15):
                 print(url, tag)
                 if tag:
                     output_path = os.path.join(root_path, tag.strip())
+                    
+                    curr_count = aggregate_counts(output_path)
+                    if curr_count['success_count'] > 0 and curr_count['fail_count'] == 0:
+                        logging.info('The folder already be downloaded. We could skip this.')
+                        continue
+                        
+                    logging.warning('Resubmitting... Removing previous count.')
+                    remove_files_recursively(output_path, 'count*.json')
+                    submitted_folder.append(output_path)
                     command = ["bash", "nscc/scrapt_youtube_nscc.sh", url.strip(), output_path, str(num_of_nodes)]
                     start_time = time.time()
                     subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)

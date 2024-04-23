@@ -23,7 +23,7 @@ class VideoDownloader:
         if not os.path.exists(output_path):
             os.makedirs(output_path)
 
-        max_retries = 5
+        max_retries = 3
         for attempt in range(max_retries):
             command = [
             'yt-dlp',
@@ -62,7 +62,7 @@ class VideoDownloader:
             metadata['status'] = 'already exists'
             return {"status": "success", "file": output_filename, "metadata": metadata}
 
-        max_retries = 10
+        max_retries = 3
         for attempt in range(max_retries):
             download_command = [
             'yt-dlp',
