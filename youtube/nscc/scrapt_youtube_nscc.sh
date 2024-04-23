@@ -22,7 +22,7 @@ if [ ! -f "$output_path/metadata.json" ]; then
     metadata_job_name="${name}_metadata"
     metadata_job_id=$(qsub -v channel="$channel",output_path="$output_path" \
          -N "$metadata_job_name" -o "$output_path/log/${metadata_job_name}.log" \
-         fetch_meta_wrapper.sh)
+         nscc/fetch_meta_wrapper.sh)
 
     echo $metadata_job_id
 
@@ -30,7 +30,7 @@ if [ ! -f "$output_path/metadata.json" ]; then
     for ((i=0; i<num_of_node; i++)); do
         echo "Scheduling download for node $i on channel $channel"
        qsub -W depend=afterok:$metadata_job_id -v channel="$channel",output_path="$output_path",local_rank="$i",num_of_node="$num_of_node",name="$name" \
-             -N "$name.$i" -o "$output_path/log/$name.$i.log" download_wrapper.sh 
+             -N "$name.$i" -o "$output_path/log/$name.$i.log" nscc/download_wrapper.sh 
     done
 else
     echo "metadata.json already exists, skipping metadata job"
@@ -38,6 +38,6 @@ else
     for ((i=0; i<num_of_node; i++)); do
         echo "Scheduling download for node $i on channel $channel"
         qsub -v channel="$channel",output_path="$output_path",local_rank="$i",num_of_node="$num_of_node",name="$name" \
-             -N "$name.$i" -o "$output_path/log/$name.$i.log" download_wrapper.sh 
+             -N "$name.$i" -o "$output_path/log/$name.$i.log" nscc/download_wrapper.sh 
     done
 fi

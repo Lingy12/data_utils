@@ -50,7 +50,7 @@ def submit_all_job(job_config_lst: List[str], root_path, num_of_nodes=15):
                 print(url, tag)
                 if tag:
                     output_path = os.path.join(root_path, tag.strip())
-                    command = ["bash", "scrapt_youtube_nscc.sh", url.strip(), output_path, str(num_of_nodes)]
+                    command = ["bash", "nscc/scrapt_youtube_nscc.sh", url.strip(), output_path, str(num_of_nodes)]
                     start_time = time.time()
                     subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
                     duration = time.time() - start_time

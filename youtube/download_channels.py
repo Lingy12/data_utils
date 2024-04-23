@@ -20,7 +20,6 @@ class VideoDownloader:
 
 
     def fetch_video_metadata(self, channel_url, output_path):
-        proxy = self.select_proxy()
         if not os.path.exists(output_path):
             os.makedirs(output_path)
 
@@ -31,7 +30,8 @@ class VideoDownloader:
             '--dump-json',
             '--flat-playlist',
             '-4',
-            '--proxy', proxy,
+             '--proxy', self.select_proxy() if attempt > 0 else '',
+            '--cookies', 'cookies.txt',
             channel_url,
         ]
 
@@ -46,8 +46,7 @@ class VideoDownloader:
             else:
                 if attempt < max_retries - 1:
                     print(f"Attempt {attempt + 1} failed to fetch metadata, retrying with another proxy...")
-                    time.sleep(1)
-                    proxy = self.select_proxy()  # Switch proxy for next attempt
+                    time.sleep(0.5)
 
         print('Failed to fetch metadata after several attempts.')
         return None
@@ -72,8 +71,9 @@ class VideoDownloader:
             '--audio-quality', '5',
             '--postprocessor-args', "ffmpeg:-ar 16000",
             '-o', output_filename,
-            '--proxy', self.select_proxy(),
+            '--proxy', self.select_proxy() if attempt > 0 else '',
             '-4', 
+            '--cookies', 'cookies.txt',
             metadata['url'],
         ]
             status = subprocess.run(download_command)
@@ -82,7 +82,7 @@ class VideoDownloader:
             else:
                 if attempt < max_retries - 1:  # Avoid sleep after the last attempt
                     print(f"Attempt {attempt + 1} failed, retrying...")
-                    time.sleep(1)  # Wait for 5 seconds before retrying
+                    time.sleep(0.5)  # Wait for 5 seconds before retrying
 
         return {"status": "failed", "file": output_filename, "metadata": metadata}
 
