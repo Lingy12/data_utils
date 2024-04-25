@@ -82,7 +82,6 @@ def process_file(args):
 
         if script_t == 'Same':
             speaker1_id, speaker2_id = str(Path(os.path.basename(speaker_1)).with_suffix('')), str(Path(os.path.basename(speaker_2)).with_suffix(''))
-            print(speaker_metadata_dict.get(speaker1_id, ''))
             data['metadata']['speaker_metadata'] = {
                 "speaker_1": speaker_metadata_dict.get(speaker1_id, ''),
                 "speaker_2": speaker_metadata_dict.get(speaker2_id, '')
@@ -114,6 +113,7 @@ def build_hf(root, output_path, workers=4):
             pool.join()
 
     ds = Dataset.from_dict(ds_dict)
+    ds.cast_column('audio', Audio(sampling_rate=16000))
     print(ds)
     ds.save_to_disk(output_path, num_proc=workers)
     # print(ds_dict)
