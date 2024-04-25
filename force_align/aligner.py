@@ -24,7 +24,7 @@ def refine_script(word_segs, transcript, speaker_map):
 
     for sentence in sentences:
         curr_str = ""
-        curr_start = word_segs[word_index].start
+        curr_start = word_segs[word_index - 1].end if word_index > 0 else word_segs[0].start
         while word_index < len(word_segs) and clean_sent(sentence).strip() != clean_sent(curr_str).strip():
             curr_str += word_segs[word_index].word
             word_index += 1
