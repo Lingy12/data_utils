@@ -113,7 +113,7 @@ def build_hf(root, output_path, workers=4):
             pool.join()
 
     ds = Dataset.from_dict(ds_dict)
-    ds.cast_column('audio', Audio(sampling_rate=16000))
+    ds = ds.cast_column('audio', Audio(sampling_rate=16000))
     print(ds)
     ds.save_to_disk(output_path, num_proc=workers)
     # print(ds_dict)
