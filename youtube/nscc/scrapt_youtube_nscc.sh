@@ -9,7 +9,7 @@ if [ "$num_of_node" -gt 15 ]; then
 fi
 
 name=$(basename "$output_path")
-name="${name//@/}"
+name="${name//[^a-zA-Z]/}"
 echo $name
 
 mkdir -p "$output_path/log"

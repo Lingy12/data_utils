@@ -1,8 +1,9 @@
 #!/bin/bash
-#PBS -P 13003826
+#PBS -P 13003565
 #PBS -q normal
-#PBS -l select=1:ncpus=2:ngpus=0:mem=110gb
+#PBS -l select=1:ncpus=32:ngpus=0:mem=110gb
 #PBS -l walltime=24:00:00
+#PBS -o /home/users/astar/ares/lingy/scratch/log/count.log
 #PBS -j oe
 #PBS -k oed
 
@@ -15,5 +16,4 @@ echo "Virtual environment activated"
 
 cd $PBS_O_WORKDIR
 
-# Execute the Python script
-python download_channels.py fetch_video_metadata $channel $output_path
+python check_hours.py ~/scratch/youtube_local/ 32
