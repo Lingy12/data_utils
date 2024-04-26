@@ -72,7 +72,7 @@ def force_align(audio, transcript_jsonl):
     
     sentence_timestamp = refine_script(word_segs, transcripts, speaker_map)
     
-    output_path = Path(audio).with_suffix('.algined.jsonl')
+    output_path = Path(audio).with_suffix('.aligned.jsonl')
 
     with open(output_path, 'w') as f:
         for seg in sentence_timestamp:
