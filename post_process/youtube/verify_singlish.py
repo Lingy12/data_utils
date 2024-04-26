@@ -6,6 +6,7 @@ import random
 from tqdm import tqdm
 import multiprocessing as mp
 import os
+import fire
 
 def check_folder(root, trail):
     mp3_files = glob(os.path.join(root, '**', '*.mp3'), recursive=True)
@@ -28,8 +29,8 @@ def check_folder(root, trail):
     return {k: agg_top_10[k][0] / agg_top_10[k][1] for k in agg_top_10}
 
 def verify_folder(args):
-    folder = args
-    score = check_folder(path, 50)
+    root, folder = args
+    score = check_folder(os.path.join(root, folder), 50)
         
     if score['ms'] > 0.5 and score['en'] > 0.1:
         return 1, folder
@@ -37,9 +38,16 @@ def verify_folder(args):
         return 0, folder
 def verify_all(root, workers=4):
     sub_dirs = os.listdir(root)
-    
+    params = [(root, sub_dir) for sub_dir in sub_dirs]
     with mp.Pool(processes=workers) as p:
-        results = tqdm(p.imap_unordered(verify_folder, sub_dirs), total=len(sub_dirs))
-        
+        results = tqdm(p.imap_unordered(verify_folder, params), total=len(params))
     
+    valid_channel = []
+    for res in results:
+        if res[0] == 1:
+            valid_channel.append(res[1])
+    print('Valid channels are: {}'.format(valid_channel))
+
+if __name__ == '__main__':
+    fire.Fire(verify_all)
             
