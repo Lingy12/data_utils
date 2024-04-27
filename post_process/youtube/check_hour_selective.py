@@ -43,11 +43,8 @@ def calculate_total_duration(directory, workers=4):
 #     # total_hours = total_duration_seconds / 3600
 #     print(f"Total duration: {total_hours:.2f} hours")
 #     return total_duration_seconds
+dir_lst = ['@Misstamchiak', '@QianyuSG', '@TheDailyKetchupPodcast', '@singtel', '@SingaporeEye', '@JazePhua', '@mindefsg', '@TheMichelleChongChannel', '@CathedraloftheGoodShepherdSG', '@GhibOjisan', '@YouGotWatch', '@JTeamSingapore', '@mrbrown', '@LADIESFIRSTTVSG', '@OGS.Official', '@joshconsultancy', '@jianhao', '@sgcarmartreviews', '@DoctorTristanPeh', '@ZULAsg', '@EatbookYT', '@TheHabitsDoctor', '@Butterworks', '@GeorgiaCaney', '@nikfatimahismail', '@MothershipSG', '@SingaporeIncidentsChannel', '@pmosingapore', '@CNAInsider', '@AlexTeo', '@overkillsingapore', '@goodyfeedbluecats', '@ridhwannabe', '@ShopeeSingaporeOfficial', '@TiffwithMi', '@OKLETSGO', '@VisitSingapore', '@TheFifthPersonChannel', '@TheSmartLocal', '@thetravelintern', '@Sixiderchannel', '@SingaporePoliceForce', '@DanielTamago', '@teamtitanshorts', '@ShawnIskandar', '@CatholicSG', '@MiniMoochi', '@TheTradingGeek', '@ieatishootipost', '@clicknetwork', '@channelnewsasia', '@mingweirocks', '@zaobaodotsg', '@NCHProductions', '@TheBackstageBunch', '@MaxChernov', '@joeyyap', '@AsiasGotTalent', '@SupernaturalConfessions', '@KelvinLearnsInvesting', '@KFCSingapore', '@singaporeair', '@afterhourss', '@BenRanAway', '@MissFizaO', '@kingkongmp', '@straitstimesonline', '@McDSG', '@JosephPrince', '@NaomiNeo-xxv', '@TODAYonline', '@cartoonnetworkasia', '@DPA-War', '@wahbanana', '@AnnetteLeeMusic', '@TEAMTITANOFFICIAL', '@rebelssquad']
 
-dir_lst = ['@Misstamchiak', '@TheDailyKetchupPodcast', '@MissleoAmy', '@LADIESFIRSTTVSG', '@OGS.Official', 
-           '@DoctorTristanPeh', '@EatbookYT', '@TheHabitsDoctor', '@Butterworks', '@MothershipSG', '@CNAInsider', '@TiffwithMi', 
-           '@VisitSingapore', '@CatholicSG', '@TheTradingGeek', '@FreeMovementDance', '@NCHProductions', '@ViuSingapore', '@KelvinLearnsInvesting', '@afterhourss', 
-           '@BenRanAway', '@StackedHomes', '@JosephPrince', '@TODAYonline', '@ZermattNeo', '@TEAMTITANOFFICIAL']
 root = '/home/geyu/data/youtube_local'
 
 len_t = 0
