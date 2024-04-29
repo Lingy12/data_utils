@@ -60,7 +60,7 @@ def submit_all_job(job_config_lst: List[str], root_path, num_of_nodes=15):
             logging.info('Checking for connection health...')
             for f in submitted_folder:
                 check_res = aggregate_counts(f)
-                if check_res['fail_count'] > 0.1 * check_res['success_count'] :
+                if check_res['fail_count'] < 10:
                     logging.warning(f'A lot of jobs are failing in {f}, exiting and killing all jobs. Please consider update cookie or add proxy.')
                           # Run qstat and pipe the output to wc -l
                     p1 = subprocess.Popen(["qselect", '-u', 'lingy'], stdout=subprocess.PIPE)
@@ -83,8 +83,9 @@ def submit_all_job(job_config_lst: List[str], root_path, num_of_nodes=15):
                     output_path = os.path.join(root_path, tag.strip())
                     
                     curr_count = aggregate_counts(output_path)
-                    if curr_count['success_count'] > 0 and curr_count['fail_count'] == 0:
-                        logging.info('The folder already be downloaded. We could skip this.')
+                    if curr_count['fail_count'] < 10:
+                        logger.info('Number of failing = {}'.format(curr_count['fail_count']))
+                        logging.info('The folder already be downloaded. We could skip this. (not more than 10 failing)')
                         continue
                         
                     logging.warning('Resubmitting... Removing previous count.')
