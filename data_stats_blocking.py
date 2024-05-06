@@ -2,6 +2,7 @@ import json
 import os
 from datasets import load_from_disk
 import fire
+from tqdm import tqdm
 from multiprocessing import Pool, current_process
 
 def check_entry(args):
