@@ -8,7 +8,7 @@ from tqdm import tqdm
 def check_entry(args):
     ds, start, end = args  # Includes dataset, start and end indices for chunk
     results = []
-    for idx in range(start, end):
+    for idx in tqdm(range(start, end), desc=f"Process {start}-{end}"):
         total_audio_length = 0
         try:
             entry = ds[idx]
