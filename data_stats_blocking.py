@@ -2,13 +2,13 @@ import json
 import os
 from datasets import load_from_disk
 import fire
-from multiprocessing import Pool
-from tqdm import tqdm
+from multiprocessing import Pool, current_process
 
 def check_entry(args):
-    ds, start, end = args  # Includes dataset, start and end indices for chunk
+    ds, start, end, proc_num = args  # Includes dataset, start, end indices, and process number
     results = []
-    for idx in tqdm(range(start, end), desc=f"Process {start}-{end}"):
+    # Setting up tqdm with a unique position for each worker based on its number
+    for idx in tqdm(range(start, end), desc=f"Process {proc_num}: {start}-{end}", position=proc_num):
         total_audio_length = 0
         try:
             entry = ds[idx]
@@ -49,13 +49,13 @@ def check_data(hf_folder: str, num_worker: int = 4):
         
         N = len(ds)
         chunk_size = (N + num_worker - 1) // num_worker  # Ensures evenly distributed workload
-        pool_inputs = [(ds, i, min(i + chunk_size, N)) for i in range(0, N, chunk_size)]
+        pool_inputs = [(ds, i, min(i + chunk_size, N), worker_id) for worker_id, i in enumerate(range(0, N, chunk_size))]
         
         with Pool(processes=num_worker) as pool:
-            results = list(tqdm(pool.imap(check_entry, pool_inputs), total=len(pool_inputs)))
-            # Flatten results list
-            flat_results = [item for sublist in results for item in sublist]
-        
+            results = pool.map(check_entry, pool_inputs)  # Each worker now has its own position for tqdm
+            
+        # Flatten results list
+        flat_results = [item for sublist in results for item in sublist]
         process_results(flat_results, ds, split, hf_folder)
 
 def process_results(results, ds, split, hf_folder):
