@@ -22,11 +22,14 @@ def init_vad_model():
                                 onnx=False)
     vad_models[pid] = model.to('cuda')
     vad_utils[pid] = utils
+    print(f'vad model initialized for pid = {pid}')
     
-# def init_whisper_model():
-#     pid = multiprocessing.current_process().pid
-#     whisper_model = whisper.load_model("base")
-#     whisper_models[pid] = whisper_model
+def init_whisper_model():
+    pid = multiprocessing.current_process().pid
+    whisper_model = whisper.load_model("base")
+    whisper_models[pid] = whisper_model
+    
+    print(f'whisper model initialized for pid = {pid}')
 
 # ## loading model
 # model, utils = torch.hub.load(repo_or_dir='snakers4/silero-vad',
