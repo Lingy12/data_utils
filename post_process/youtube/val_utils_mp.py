@@ -26,7 +26,7 @@ def init_vad_model():
     
 def init_whisper_model():
     pid = multiprocessing.current_process().pid
-    whisper_model = whisper.load_model("base")
+    whisper_model = whisper.load_model("base", device='cuda')
     whisper_models[pid] = whisper_model
     
     print(f'whisper model initialized for pid = {pid}')
