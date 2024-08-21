@@ -23,7 +23,7 @@ class VideoDownloader:
         if not os.path.exists(output_path):
             os.makedirs(output_path)
 
-        max_retries = 3
+        max_retries = 10
         for attempt in range(max_retries):
             command = [
             'yt-dlp',
@@ -46,7 +46,7 @@ class VideoDownloader:
             else:
                 if attempt < max_retries - 1:
                     print(f"Attempt {attempt + 1} failed to fetch metadata, retrying with another proxy...")
-                    time.sleep(0.5)
+                    time.sleep(5)
 
         print('Failed to fetch metadata after several attempts.')
         return None
