@@ -35,7 +35,7 @@ def check_job_count(max_jobs=80):
         logging.error(f"Error checking job count: {e}")
         return False
 
-def submit_all_job(job_config_lst: List[str], root_path, num_of_nodes=15):
+def submit_all_job(job_config_lst: List[str] = ['nscc/vidiq.job', 'nscc/hyper_audit.job'], root_path='/home/project/13003826/geyu/youtube_local_raw', num_of_nodes=15):
     print(job_config_lst)
     total_jobs = 0
     successful_jobs = 0
@@ -85,7 +85,7 @@ def submit_all_job(job_config_lst: List[str], root_path, num_of_nodes=15):
                     
                     curr_count = aggregate_counts(output_path)
                     print(output_path)
-                    if os.path.exists(output_path) and (curr_count['fail_count'] < 10 or curr_count['fail_count'] < 0.1 * curr_count['success_count']):
+                    if curr_count['fail_count'] + curr_count['success_count'] > 10 and (curr_count['fail_count'] < 10 or curr_count['fail_count'] < 0.1 * curr_count['success_count']):
                         logging.info('Number of failing = {}'.format(curr_count['fail_count']))
                         logging.info('The folder already be downloaded. We could skip this. (not more than 10 failing)')
                         continue
