@@ -1,4 +1,4 @@
-from val_utils import identify_language
+from val_utils_mp import identify_language, init_whisper_model
 
 from glob import glob
 import os 
@@ -32,6 +32,7 @@ def check_folder(root, trail):
 
 def verify_folder(args):
     root, folder = args
+    init_whisper_model()
     score = check_folder(os.path.join(root, folder), 50)
     print(folder, score)      
     if 'ms' not in score:
@@ -40,14 +41,15 @@ def verify_folder(args):
         return 1, folder
     else:
         return 0, folder
+    
 def verify_all(root, workers=4):
     sub_dirs = os.listdir(root)
     params = [(root, sub_dir) for sub_dir in sub_dirs]
-    # with mp.Pool(processes=workers) as p:
-    #     results = tqdm(p.imap_unordered(verify_folder, params), total=len(params))
-    results = []
-    for p in tqdm(params):
-        results.append(verify_folder(p))
+    with mp.Pool(processes=workers) as p:
+        results = tqdm(p.imap_unordered(verify_folder, params), total=len(params))
+    # results = []
+    # for p in tqdm(params):
+    #     results.append(verify_folder(p))
     valid_channel = []
     for res in results:
         if res[0] == 1:

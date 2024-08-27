@@ -36,32 +36,9 @@ class SegmenteAudio(object):
         return output_batch
     
     
-def segment_ytb_to_hf(raw_folder, output_path, batch_size=10, workers=4):
-    
-    os.makedirs(output_path, exist_ok=True)
-    ori_dict = {"audio": [], "parent": [], "sentence": [], "ytb_id": []}
-    
-        # Iterate through all files in the raw_folder directory
-    for root, dirs, files in os.walk(raw_folder):
-        for file in files:
-            if file.endswith(".mp3"):
-                # Construct the full path of the file
-                file_path = os.path.join(root, file)
-                # Extract the base directory name and the file name
-                base_dir = os.path.basename(os.path.dirname(file_path))
-                file_name = os.path.basename(file_path)
-
-                # Extract the YouTube ID (filename without .mp3)
-                ytb_id = os.path.splitext(file_name)[0]
-                
-                # Append the data to the dictionary
-                ori_dict["audio"].append(file_path)
-                ori_dict["parent"].append(base_dir)
-                ori_dict["sentence"].append("")  # Assuming 'sentence' to be filled later or elsewhere
-                ori_dict["ytb_id"].append(ytb_id)
-    
-    # print(ori_dict)
-    ori_ds = Dataset.from_dict(ori_dict)
+def segment_ytb_to_hf(dataset_folder, output_path, batch_size=10, workers=4):
+ 
+    ori_ds = load_from_disk(dataset_folder)
     ori_ds = ori_ds.cast_column('audio', Audio(sampling_rate=16000))
     split_funct = SegmenteAudio(sampling_rate=16000)
     
