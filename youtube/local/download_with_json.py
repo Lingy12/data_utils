@@ -72,6 +72,8 @@ def download_single_audio(entry, root_path, manager):
     if result['status'] == 'fail':
         if manager.increment_failures():
             return None  # Signal to stop
+        else:
+            return 'fail'
     else:
         manager.reset_failures()
     
@@ -90,7 +92,8 @@ def download_data(data_config_path, root_path, total_device = 1, device_index = 
     # data_conf = 
     manager = DownloadManager(failure_threshold)
     # results = []
-    
+    fail_count = 0
+    total_count = 0
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = {executor.submit(download_single_audio, entry, root_path, manager): entry for entry in data_conf}
         
@@ -100,7 +103,10 @@ def download_data(data_config_path, root_path, total_device = 1, device_index = 
                 print(f"Stopping due to {failure_threshold} consecutive failures.")
                 executor.shutdown(wait=False, cancel_futures=True)
                 break
-            
+            total_count += 1
+            if result == 'fail':
+                fail_count += 1
+                print(f'Current fail count = {fail_count}, current total count = {total_count}')
             # results.append(result)
             #print(result)  # Print result as soon as it's available
             
