@@ -80,11 +80,13 @@ def download_single_audio(entry, root_path, manager):
 def download_data(data_config_path, root_path, total_device = 1, device_index = 0, max_workers=4, failure_threshold=50):
     with open(data_config_path, 'r') as f:
         data_conf = json.load(f)
-    
+    print('total device = {}, deivce index = {}'.format(total_device, device_index))
     entries_per_device = math.ceil(len(data_conf) / total_device)
     start_index = device_index * entries_per_device
     end_index = min((device_index + 1) * entries_per_device, len(data_conf))
+    print(start_index, end_index)
     data_conf = data_conf[start_index:end_index]
+    print('total samples to download = {}'.format(len(data_conf)))
     # data_conf = 
     manager = DownloadManager(failure_threshold)
     # results = []
