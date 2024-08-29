@@ -11,13 +11,13 @@ def download_audio(metadata, output_path):
     # metadata, output_path = args
     # metadata = json.loads(metadata)
     video_id = metadata['id']
-    
+    # print(f'Start download {video_id}')
     if not os.path.exists(output_path):
         os.makedirs(output_path, exist_ok=True)
     output_filename = os.path.join(output_path, f"{video_id}.mp3")
     # print(output_filename)
     if os.path.exists(output_filename):
-        # print('already exists')
+        print(f'{output_filename} already exists')
         return {"status": "success", "file": output_filename, "metadata": metadata}
 
     max_retries = 3
@@ -36,14 +36,15 @@ def download_audio(metadata, output_path):
         metadata['url'],
     ]
         status = subprocess.run(download_command)
-        if status.returncode == 0:
-            assert os.path.exists(output_filename)
+        if os.path.exists(output_filename):
+            # assert os.path.exists(output_filename)
+            print('Download {} sussessfully with retry tolerance {}'.format(output_filename, attempt))
             return {"status": "success", "file": output_filename, "metadata": metadata}
         else:
             if attempt < max_retries - 1:  # Avoid sleep after the last attempt
                 print(f"Attempt {attempt + 1} failed, retrying...")
-                time.sleep(10)  # Wait for 5 seconds before retrying
-
+                time.sleep(5)  # Wait for 5 seconds before retrying
+    print('Fail to download {}'.format(output_filename))
     return {"status": "failed", "file": output_filename, "metadata": metadata}
     
 
