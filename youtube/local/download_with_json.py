@@ -7,45 +7,7 @@ import fire
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
 import math
-def download_audio(metadata, output_path):
-    # metadata, output_path = args
-    # metadata = json.loads(metadata)
-    video_id = metadata['id']
-    # print(f'Start download {video_id}')
-    if not os.path.exists(output_path):
-        os.makedirs(output_path, exist_ok=True)
-    output_filename = os.path.join(output_path, f"{video_id}.mp3")
-    # print(output_filename)
-    if os.path.exists(output_filename):
-        print(f'{output_filename} already exists')
-        return {"status": "success", "file": output_filename, "metadata": metadata}
-
-    max_retries = 3
-    for attempt in range(max_retries):
-        download_command = [
-        'yt-dlp',
-        '-x',
-        '--audio-format', 'mp3',
-        '--audio-quality', '5',
-        '--postprocessor-args', "ffmpeg:-ar 16000",
-        '-o', output_filename,
-        '-4', 
-        '-q',
-        '--no-warnings',
-        '--username', 'oauth2', '--password', '',
-        metadata['url'],
-    ]
-        status = subprocess.run(download_command)
-        if os.path.exists(output_filename):
-            # assert os.path.exists(output_filename)
-            print('Download {} sussessfully with retry tolerance {}'.format(output_filename, attempt))
-            return {"status": "success", "file": output_filename, "metadata": metadata}
-        else:
-            if attempt < max_retries - 1:  # Avoid sleep after the last attempt
-                print(f"Attempt {attempt + 1} failed, retrying...")
-                time.sleep(5)  # Wait for 5 seconds before retrying
-    print('Fail to download {}'.format(output_filename))
-    return {"status": "failed", "file": output_filename, "metadata": metadata}
+from local.download_funcs import download_audio_yt_dlp, download_audio_rapid
     
 
 class DownloadManager:
@@ -68,7 +30,7 @@ class DownloadManager:
 
 def download_single_audio(entry, root_path, manager):
     channel_path = os.path.join(root_path, entry['channel'])
-    result = download_audio(entry, channel_path)
+    result = download_audio_yt_dlp(entry, channel_path)
     
     if result['status'] == 'fail':
         if manager.increment_failures():
