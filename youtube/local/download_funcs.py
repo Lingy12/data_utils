@@ -3,9 +3,21 @@ from local.secret import rapid_key
 import sys
 from pydub import AudioSegment
 import os
+import subprocess
 
 # target_url = sys.argv[1]
 def download_audio_rapid(metadata, output_path):
+    video_id = metadata['id']
+    
+    if not os.path.exists(output_path):
+        os.makedirs(output_path, exist_ok=True)
+    
+    output_filename = os.path.join(output_path, f"{video_id}.mp3")
+    # print(output_filename)
+    if os.path.exists(output_filename):
+        # print(f'{output_filename} already exists')
+        return {"status": "success", "file": output_filename, "metadata": metadata}
+    
     url = "https://youtube86.p.rapidapi.com/api/youtube/links"
     headers = {
         'Content-Type': 'application/json',
@@ -65,7 +77,7 @@ def download_audio_yt_dlp(metadata, output_path):
     output_filename = os.path.join(output_path, f"{video_id}.mp3")
     # print(output_filename)
     if os.path.exists(output_filename):
-        print(f'{output_filename} already exists')
+        # print(f'{output_filename} already exists')
         return {"status": "success", "file": output_filename, "metadata": metadata}
 
     max_retries = 3
@@ -86,12 +98,12 @@ def download_audio_yt_dlp(metadata, output_path):
         status = subprocess.run(download_command)
         if os.path.exists(output_filename):
             # assert os.path.exists(output_filename)
-            print('Download {} sussessfully with retry tolerance {}'.format(output_filename, attempt))
+            # print('Download {} sussessfully with retry tolerance {}'.format(output_filename, attempt))
             return {"status": "success", "file": output_filename, "metadata": metadata}
         else:
             if attempt < max_retries - 1:  # Avoid sleep after the last attempt
                 print(f"Attempt {attempt + 1} failed, retrying...")
-                time.sleep(5)  # Wait for 5 seconds before retrying
-    print('Fail to download {}'.format(output_filename))
+                time.sleep(1)  # Wait for 5 seconds before retrying
+    # print('Fail to download {}'.format(output_filename))
     return {"status": "failed", "file": output_filename, "metadata": metadata}
 

@@ -30,14 +30,16 @@ class DownloadManager:
 
 def download_single_audio(entry, root_path, manager):
     channel_path = os.path.join(root_path, entry['channel'])
-    result = download_audio_yt_dlp(entry, channel_path)
-    
+    result = download_audio_rapid(entry, channel_path)
+    print(result)
     if result['status'] == 'fail':
         if manager.increment_failures():
             return None  # Signal to stop
         else:
+            print('Failed to download {}'.format(entry))
             return 'fail'
     else:
+        print('Downloaded {}'.format(entry))
         manager.reset_failures()
     
     return f"Downloaded {entry['channel']}: {result['status']}"
