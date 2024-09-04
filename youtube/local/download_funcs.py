@@ -1,10 +1,13 @@
 import requests
 from local.secret import rapid_key
 import sys
-from pydub import AudioSegment
 import os
 import subprocess
 import time
+import logging
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', stream=sys.stdout)
+logger = logging.getLogger(__name__)
 
 # target_url = sys.argv[1]
 def download_audio_rapid(metadata, output_path):
@@ -33,7 +36,12 @@ def download_audio_rapid(metadata, output_path):
         "url": metadata['url']
     }
     
-    response = requests.post(url, headers=headers, json=data)
+    try:
+        response = requests.post(url, headers=headers, json=data)
+    except Exception as e:
+        logger.error(f"Error fetching audio links: {e}")
+        open(fail_filename, 'w').close()
+        return {"status": "failed", "file": output_filename, "metadata": metadata}
     # print('fetched audio links')
     if response.status_code == 200:
         result = response.json()
@@ -53,7 +61,7 @@ def download_audio_rapid(metadata, output_path):
                 max_retries = 3
                 for attempt in range(max_retries):
                     try:
-                        audio_response = requests.get(audio_url)  # Add timeout
+                        audio_response = requests.get(audio_url, timeout=300)  # Add timeout
                         audio_response.raise_for_status()  # Raise an exception for bad status codes
                         break  # If successful, break the retry loop
                     except (requests.RequestException, requests.Timeout) as e:
@@ -69,14 +77,29 @@ def download_audio_rapid(metadata, output_path):
                     with open(temp_filename, 'wb') as audio_file:
                         audio_file.write(audio_response.content)  # Save content to file
                     
-                    # Convert to MP3 and downsample to 16000 Hz
-                    audio = AudioSegment.from_file(temp_filename, format=extension)
-                    audio = audio.set_frame_rate(16000)  # Downsample to 16000 Hz
+                    # Convert to MP3 and downsample to 16000 Hz using ffmpeg
                     mp3_filename = os.path.join(output_path, f"{video_id}.mp3")  # Final MP3 filename
-                    audio.export(mp3_filename, format="mp3", parameters=["-ar", "16000"])  # Export as MP3
+                    ffmpeg_command = [
+                        'ffmpeg',
+                        '-i', temp_filename,
+                        '-ar', '16000',
+                        '-ac', '1',
+                        '-b:a', '64k',
+                        mp3_filename
+                    ]
                     
-                    os.remove(temp_filename)  # Remove the temporary file
-                    return {"status": "success", "file": output_filename, "metadata": metadata}  # Return True on successful download and conversion
+                    try:
+                        subprocess.run(ffmpeg_command, check=True, capture_output=True, text=True)
+                        os.remove(temp_filename)  # Remove the temporary file
+                        return {"status": "success", "file": output_filename, "metadata": metadata}
+                    except subprocess.CalledProcessError as e:
+                        logger.error(f"Error converting audio: {e.stderr}")
+                        open(fail_filename, 'w').close()  # Create .fail file
+                        return {"status": "failed", "file": output_filename, "metadata": metadata}
+
+                # If all attempts fail or no successful download occurs
+                open(fail_filename, 'w').close()  # Create .fail file
+                return {"status": "failed", "file": output_filename, "metadata": metadata}  # Return False if no successful download occurs
         # If all attempts fail or no successful download occurs
         open(fail_filename, 'w').close()  # Create .fail file
         return {"status": "failed", "file": output_filename, "metadata": metadata}  # Return False if no successful download occurs

@@ -27,7 +27,7 @@ def download_single_audio(args):
 
     return f"Downloaded {entry['channel']}: {result['status']}"
 
-def download_data(data_config_path, root_path, total_device=1, device_index=0, max_workers=4, skip_index=0):
+def download_data(data_config_path, root_path, total_device=1, device_index=0, max_workers=32, skip_index=0):
     with open(data_config_path, 'r') as f:
         data_conf = json.load(f)
     
@@ -45,7 +45,7 @@ def download_data(data_config_path, root_path, total_device=1, device_index=0, m
         total_count = 0
         
         for result in tqdm(pool.imap_unordered(download_single_audio, [(root_path, entry) for entry in reversed(data_conf)]), total=len(data_conf)):
-            logger.info(result)  # Print the result as it comes in
+            # logger.info(result)  # Print the result as it comes in
             total_count += 1
             if result == 'fail':
                 fail_count += 1
