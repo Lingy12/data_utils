@@ -7,80 +7,43 @@ import fire
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
 import math
+from multiprocessing import Pool
 from local.download_funcs import download_audio_yt_dlp, download_audio_rapid
     
 
-# class DownloadManager:
-#     def __init__(self, failure_threshold=1000000):
-#         self.consecutive_failures = 0
-#         self.failure_threshold = failure_threshold
-#         self.lock = threading.Lock()
-#         self.should_stop = False
-
-#     def reset_failures(self):
-#         with self.lock:
-#             self.consecutive_failures = 0
-
-#     def increment_failures(self):
-#         with self.lock:
-#             self.consecutive_failures += 1
-#             if self.consecutive_failures >= self.failure_threshold:
-#                 self.should_stop = True
-#         return self.should_stop
-
-def download_single_audio(entry, root_path):
+def download_single_audio(args):
+    root_path, entry = args
     channel_path = os.path.join(root_path, entry['channel'])
     result = download_audio_rapid(entry, channel_path)
     print(result)
     
     if result['status'] == 'failed':
         return 'fail'
-    # if result['status'] == 'failed':
-    #     if manager.increment_failures():
-    #         return None  # Signal to stop
-    #     else:
-    #         print('Failed to download {}'.format(entry))
-    #         return 'fail'
-    # else:
-    #     print('Downloaded {}'.format(entry))
-    #     manager.reset_failures()
-    
+
     return f"Downloaded {entry['channel']}: {result['status']}"
 
-def download_data(data_config_path, root_path, total_device = 1, device_index = 0, max_workers=4, failure_threshold=50):
+def download_data(data_config_path, root_path, total_device=1, device_index=0, max_workers=4):
     with open(data_config_path, 'r') as f:
         data_conf = json.load(f)
-    print('total device = {}, deivce index = {}'.format(total_device, device_index))
+    
+    print(f'Total device = {total_device}, device index = {device_index}')
     entries_per_device = math.ceil(len(data_conf) / total_device)
     start_index = device_index * entries_per_device
     end_index = min((device_index + 1) * entries_per_device, len(data_conf))
-    print(start_index, end_index)
+    print(f'Start index: {start_index}, End index: {end_index}')
+    
     data_conf = data_conf[start_index:end_index]
-    print('total samples to download = {}'.format(len(data_conf)))
-    # data_conf = 
-    # manager = DownloadManager(failure_threshold)
-    # results = []
-    fail_count = 0
-    total_count = 0
-    for entry in tqdm(data_conf):
-        # futures = {executor.submit(download_single_audio, entry, root_path): entry for entry in data_conf}
-        result = download_single_audio(entry, root_path)
-        # for future in tqdm(as_completed(futures), total=len(futures), desc="Downloading audio files"):()
-            # if result is None:  # Check if we should stop
-            #     print(f"Stopping due to {failure_threshold} consecutive failures.")
-            #     executor.shutdown(wait=False, cancel_futures=True)
-            #     break
-        total_count += 1
-        if result == 'fail':
-            fail_count += 1
-            print(f'Current fail count = {fail_count}, current total count = {total_count}')
-            # results.append(result)
-            #print(result)  # Print result as soon as it's available
-            
-            # if manager.should_stop:
-            #     print(f"Stopping due to {failure_threshold} consecutive failures.")
-            #     executor.shutdown(wait=False, cancel_futures=True)
-            #     break
+    print(f'Total samples to download = {len(data_conf)}')
+
+    with Pool(processes=max_workers) as pool:
+        results = list(tqdm(
+            pool.imap(download_single_audio, [(root_path, entry) for entry in reversed(data_conf)]),
+            total=len(data_conf)
+        ))
+
+    fail_count = results.count('failed')
+    total_count = len(results)
+    print(f'Total downloads: {total_count}, Failed downloads: {fail_count}')
         
         
 if __name__ == '__main__':
