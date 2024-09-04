@@ -1,8 +1,8 @@
 #!/bin/bash
 #PBS -P 13003826
 #PBS -q normal
-#PBS -l select=1:ncpus=10:ngpus=0:mem=110gb
-#PBS -l walltime=120:00:00
+#PBS -l select=1:ncpus=8:ngpus=0:mem=110gb
+#PBS -l walltime=24:00:00
 #PBS -j oe
 #PBS -k oed
 

@@ -14,9 +14,13 @@ def download_audio_rapid(metadata, output_path):
         os.makedirs(output_path, exist_ok=True)
     
     output_filename = os.path.join(output_path, f"{video_id}.mp3")
-    # print(output_filename)
+    fail_filename = os.path.join(output_path, f"{video_id}.fail")
+    
+    # Check if .fail file exists
+    if os.path.exists(fail_filename):
+        return {"status": "failed", "file": output_filename, "metadata": metadata}
+    
     if os.path.exists(output_filename):
-        # print(f'{output_filename} already exists')
         return {"status": "success", "file": output_filename, "metadata": metadata}
     
     url = "https://youtube86.p.rapidapi.com/api/youtube/links"
@@ -49,7 +53,7 @@ def download_audio_rapid(metadata, output_path):
                 max_retries = 3
                 for attempt in range(max_retries):
                     try:
-                        audio_response = requests.get(audio_url, timeout=300)  # Add timeout
+                        audio_response = requests.get(audio_url)  # Add timeout
                         audio_response.raise_for_status()  # Raise an exception for bad status codes
                         break  # If successful, break the retry loop
                     except (requests.RequestException, requests.Timeout) as e:
@@ -73,9 +77,12 @@ def download_audio_rapid(metadata, output_path):
                     
                     os.remove(temp_filename)  # Remove the temporary file
                     return {"status": "success", "file": output_filename, "metadata": metadata}  # Return True on successful download and conversion
+        # If all attempts fail or no successful download occurs
+        open(fail_filename, 'w').close()  # Create .fail file
         return {"status": "failed", "file": output_filename, "metadata": metadata}  # Return False if no successful download occurs
     else:
         print("Error:", response.status_code, response.text)
+        open(fail_filename, 'w').close()  # Create .fail file
         return {"status": "failed", "file": output_filename, "metadata": metadata}
 
 # Example usage
