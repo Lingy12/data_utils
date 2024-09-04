@@ -29,10 +29,10 @@ def download_audio_rapid(metadata, output_path):
     }
     
     response = requests.post(url, headers=headers, json=data)
-    print('fetched audio links')
+    # print('fetched audio links')
     if response.status_code == 200:
         result = response.json()
-        print(result[0]['urls'][0]['url'])
+        # print(result[0]['urls'][0]['url'])
         # Extract the video ID from the URL
         video_id = metadata['id']
         
