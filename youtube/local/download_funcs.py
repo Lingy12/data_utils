@@ -70,6 +70,7 @@ def download_audio_rapid(metadata, output_path):
                             time.sleep(1)  # Wait for 1 second before retrying
                         else:
                             print(f"Failed to fetch audio after {max_retries} attempts.")
+                            open(fail_filename, 'w').close()  # Create .fail file
                             return {"status": "failed", "file": output_filename, "metadata": metadata}
 
                 if audio_response.status_code == 200:
@@ -90,9 +91,8 @@ def download_audio_rapid(metadata, output_path):
                     
                     try:
                         subprocess.run(ffmpeg_command, check=True, capture_output=True, text=True)
-                        
                         if os.path.exists(temp_filename):
-                        os.remove(temp_filename)  # Remove the temporary file
+                            os.remove(temp_filename)  # Remove the temporary file
                         return {"status": "success", "file": output_filename, "metadata": metadata}
                     except subprocess.CalledProcessError as e:
                         logger.error(f"Error converting audio: {e.stderr}")
