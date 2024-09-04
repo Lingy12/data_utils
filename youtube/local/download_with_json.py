@@ -10,37 +10,40 @@ import math
 from local.download_funcs import download_audio_yt_dlp, download_audio_rapid
     
 
-class DownloadManager:
-    def __init__(self, failure_threshold=50):
-        self.consecutive_failures = 0
-        self.failure_threshold = failure_threshold
-        self.lock = threading.Lock()
-        self.should_stop = False
+# class DownloadManager:
+#     def __init__(self, failure_threshold=1000000):
+#         self.consecutive_failures = 0
+#         self.failure_threshold = failure_threshold
+#         self.lock = threading.Lock()
+#         self.should_stop = False
 
-    def reset_failures(self):
-        with self.lock:
-            self.consecutive_failures = 0
+#     def reset_failures(self):
+#         with self.lock:
+#             self.consecutive_failures = 0
 
-    def increment_failures(self):
-        with self.lock:
-            self.consecutive_failures += 1
-            if self.consecutive_failures >= self.failure_threshold:
-                self.should_stop = True
-        return self.should_stop
+#     def increment_failures(self):
+#         with self.lock:
+#             self.consecutive_failures += 1
+#             if self.consecutive_failures >= self.failure_threshold:
+#                 self.should_stop = True
+#         return self.should_stop
 
-def download_single_audio(entry, root_path, manager):
+def download_single_audio(entry, root_path):
     channel_path = os.path.join(root_path, entry['channel'])
     result = download_audio_rapid(entry, channel_path)
     print(result)
-    if result['status'] == 'fail':
-        if manager.increment_failures():
-            return None  # Signal to stop
-        else:
-            print('Failed to download {}'.format(entry))
-            return 'fail'
-    else:
-        print('Downloaded {}'.format(entry))
-        manager.reset_failures()
+    
+    if result['status'] == 'failed':
+        return 'fail'
+    # if result['status'] == 'failed':
+    #     if manager.increment_failures():
+    #         return None  # Signal to stop
+    #     else:
+    #         print('Failed to download {}'.format(entry))
+    #         return 'fail'
+    # else:
+    #     print('Downloaded {}'.format(entry))
+    #     manager.reset_failures()
     
     return f"Downloaded {entry['channel']}: {result['status']}"
 
@@ -55,30 +58,29 @@ def download_data(data_config_path, root_path, total_device = 1, device_index = 
     data_conf = data_conf[start_index:end_index]
     print('total samples to download = {}'.format(len(data_conf)))
     # data_conf = 
-    manager = DownloadManager(failure_threshold)
+    # manager = DownloadManager(failure_threshold)
     # results = []
     fail_count = 0
     total_count = 0
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        futures = {executor.submit(download_single_audio, entry, root_path, manager): entry for entry in data_conf}
-        
-        for future in tqdm(as_completed(futures), total=len(futures), desc="Downloading audio files"):
-            result = future.result()
-            if result is None:  # Check if we should stop
-                print(f"Stopping due to {failure_threshold} consecutive failures.")
-                executor.shutdown(wait=False, cancel_futures=True)
-                break
-            total_count += 1
-            if result == 'fail':
-                fail_count += 1
-                print(f'Current fail count = {fail_count}, current total count = {total_count}')
+    for entry in tqdm(data_conf):
+        # futures = {executor.submit(download_single_audio, entry, root_path): entry for entry in data_conf}
+        result = download_single_audio(entry, root_path)
+        # for future in tqdm(as_completed(futures), total=len(futures), desc="Downloading audio files"):()
+            # if result is None:  # Check if we should stop
+            #     print(f"Stopping due to {failure_threshold} consecutive failures.")
+            #     executor.shutdown(wait=False, cancel_futures=True)
+            #     break
+        total_count += 1
+        if result == 'fail':
+            fail_count += 1
+            print(f'Current fail count = {fail_count}, current total count = {total_count}')
             # results.append(result)
             #print(result)  # Print result as soon as it's available
             
-            if manager.should_stop:
-                print(f"Stopping due to {failure_threshold} consecutive failures.")
-                executor.shutdown(wait=False, cancel_futures=True)
-                break
+            # if manager.should_stop:
+            #     print(f"Stopping due to {failure_threshold} consecutive failures.")
+            #     executor.shutdown(wait=False, cancel_futures=True)
+            #     break
         
         
 if __name__ == '__main__':

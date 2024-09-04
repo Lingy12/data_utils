@@ -4,6 +4,7 @@ import sys
 from pydub import AudioSegment
 import os
 import subprocess
+import time
 
 # target_url = sys.argv[1]
 def download_audio_rapid(metadata, output_path):
@@ -43,8 +44,22 @@ def download_audio_rapid(metadata, output_path):
                 audio_url = url['url']  # Get the audio URL
                 extension = url['extension']  # Get the extension
                 # print(url, extension)
-                audio_response = requests.get(audio_url)  # Fetch the audio content
-                # print(audio_response)
+                
+                # Add retry logic for fetching audio_response
+                max_retries = 3
+                for attempt in range(max_retries):
+                    try:
+                        audio_response = requests.get(audio_url, timeout=300)  # Add timeout
+                        audio_response.raise_for_status()  # Raise an exception for bad status codes
+                        break  # If successful, break the retry loop
+                    except (requests.RequestException, requests.Timeout) as e:
+                        if attempt < max_retries - 1:
+                            print(f"Attempt {attempt + 1} failed, retrying... Error: {str(e)}")
+                            time.sleep(1)  # Wait for 1 second before retrying
+                        else:
+                            print(f"Failed to fetch audio after {max_retries} attempts.")
+                            return {"status": "failed", "file": output_filename, "metadata": metadata}
+
                 if audio_response.status_code == 200:
                     temp_filename = os.path.join(output_path, f"{video_id}.{extension}")  # Temporary filename
                     with open(temp_filename, 'wb') as audio_file:
