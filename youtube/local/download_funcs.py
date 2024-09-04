@@ -90,6 +90,8 @@ def download_audio_rapid(metadata, output_path):
                     
                     try:
                         subprocess.run(ffmpeg_command, check=True, capture_output=True, text=True)
+                        
+                        if os.path.exists(temp_filename):
                         os.remove(temp_filename)  # Remove the temporary file
                         return {"status": "success", "file": output_filename, "metadata": metadata}
                     except subprocess.CalledProcessError as e:
