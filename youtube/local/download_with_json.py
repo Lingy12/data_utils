@@ -27,7 +27,7 @@ def download_single_audio(args):
 
     return f"Downloaded {entry['channel']}: {result['status']}"
 
-def download_data(data_config_path, root_path, total_device=1, device_index=0, max_workers=32, skip_index=0):
+def download_data(data_config_path, root_path, total_device=1, device_index=0, max_workers=50, skip_index=0):
     with open(data_config_path, 'r') as f:
         data_conf = json.load(f)
     
