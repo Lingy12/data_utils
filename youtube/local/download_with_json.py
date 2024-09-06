@@ -7,7 +7,7 @@ import fire
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import threading
 import math
-from multiprocessing import Pool
+from multiprocessing import Pool, Manager
 from local.download_funcs import download_audio_yt_dlp, download_audio_rapid
 import logging
 import sys
@@ -40,18 +40,37 @@ def download_data(data_config_path, root_path, total_device=1, device_index=0, m
     data_conf = data_conf[start_index:end_index]
     logger.info(f'Total samples to download = {len(data_conf)}')
 
-    with Pool(processes=max_workers) as pool:
-        fail_count = 0
-        total_count = 0
-        
-        for result in tqdm(pool.imap_unordered(download_single_audio, [(root_path, entry) for entry in reversed(data_conf)]), total=len(data_conf)):
-            # logger.info(result)  # Print the result as it comes in
-            total_count += 1
-            if result == 'fail':
-                fail_count += 1
+    with Manager() as manager:
+        consecutive_fails = manager.Value('i', 0)
+        max_consecutive_fails = 50
 
-    logger.info(f'Total downloads: {total_count}, Failed downloads: {fail_count}')
-        
-        
+        def process_result(result):
+            nonlocal consecutive_fails
+            if result == 'fail':
+                consecutive_fails.value += 1
+                if consecutive_fails.value >= max_consecutive_fails:
+                    logger.error(f"Stopping process due to {max_consecutive_fails} consecutive failures")
+                    pool.terminate()
+                return 1
+            else:
+                consecutive_fails.value = 0
+                return 0
+
+        with Pool(processes=max_workers) as pool:
+            fail_count = 0
+            total_count = 0
+            
+            try:
+                for result in tqdm(pool.imap_unordered(download_single_audio, [(root_path, entry) for entry in reversed(data_conf)]), total=len(data_conf)):
+                    total_count += 1
+                    fail_count += process_result(result)
+                    if consecutive_fails.value >= max_consecutive_fails:
+                        break
+            except Exception as e:
+                logger.error(f"An error occurred: {e}")
+                pool.terminate()
+
+        logger.info(f'Total downloads: {total_count}, Failed downloads: {fail_count}')
+
 if __name__ == '__main__':
     fire.Fire(download_data)
