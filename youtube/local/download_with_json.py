@@ -21,14 +21,14 @@ def download_single_audio(args):
     channel_path = os.path.join(root_path, entry['channel'])
     
     # Try yt-dlp download first
-    result = download_audio_yt_dlp(entry, channel_path)
-    logger.info(f"yt-dlp download result: {result}")
+    # result = download_audio_yt_dlp(entry, channel_path)
+    # logger.info(f"yt-dlp download result: {result}")
     
-    if result['status'] == 'failed':
-        # If yt-dlp download fails, try rapid
-        logger.info("yt-dlp download failed. Trying rapid download...")
-        result = download_audio_rapid(entry, channel_path)
-        logger.info(f"Rapid download result: {result}")
+    # if result['status'] == 'failed':
+    #     # If yt-dlp download fails, try rapid
+    #     logger.info("yt-dlp download failed. Trying rapid download...")
+    result = download_audio_rapid(entry, channel_path)
+    # logger.info(f"Rapid download result: {result}")
     
     if result['status'] == 'failed':
         return 'fail'
