@@ -19,8 +19,16 @@ logger = logging.getLogger(__name__)
 def download_single_audio(args):
     root_path, entry = args
     channel_path = os.path.join(root_path, entry['channel'])
-    result = download_audio_rapid(entry, channel_path)
-    logger.info(result)
+    
+    # Try yt-dlp download first
+    result = download_audio_yt_dlp(entry, channel_path)
+    logger.info(f"yt-dlp download result: {result}")
+    
+    if result['status'] == 'failed':
+        # If yt-dlp download fails, try rapid
+        logger.info("yt-dlp download failed. Trying rapid download...")
+        result = download_audio_rapid(entry, channel_path)
+        logger.info(f"Rapid download result: {result}")
     
     if result['status'] == 'failed':
         return 'fail'
