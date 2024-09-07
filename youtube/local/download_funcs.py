@@ -149,7 +149,7 @@ def download_audio_yt_dlp(metadata, output_path):
             return {"status": "success", "file": output_filename, "metadata": metadata}
         else:
             if attempt < max_retries - 1:  # Avoid sleep after the last attempt
-                print(f"Attempt {attempt + 1} failed, retrying...")
+                logger.info(f"Attempt {attempt + 1} failed, retrying...")
                 time.sleep(1)  # Wait for 5 seconds before retrying
     # print('Fail to download {}'.format(output_filename))
     return {"status": "failed", "file": output_filename, "metadata": metadata}
