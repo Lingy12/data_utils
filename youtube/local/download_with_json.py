@@ -69,7 +69,7 @@ def download_data(data_config_path, root_path, total_device=1, device_index=0, m
             total_count = 0
             
             try:
-                for result in tqdm(pool.imap_unordered(download_single_audio, [(root_path, entry) for entry in reversed(data_conf)]), total=len(data_conf)):
+                for result in tqdm(pool.imap_unordered(download_single_audio, [(root_path, entry) for entry in data_conf]), total=len(data_conf)):
                     total_count += 1
                     fail_count += process_result(result)
                     if consecutive_fails.value >= max_consecutive_fails:
