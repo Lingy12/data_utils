@@ -17,7 +17,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 def download_single_audio(args):
-    root_path, entry = args
+    root_path, entry, use_proxy = args
     channel_path = os.path.join(root_path, entry['channel'])
     
     # Try yt-dlp download first
@@ -27,7 +27,7 @@ def download_single_audio(args):
     # if result['status'] == 'failed':
     #     # If yt-dlp download fails, try rapid
     #     logger.info("yt-dlp download failed. Trying rapid download...")
-    result = download_audio_rapid(entry, channel_path)
+    result = download_audio_rapid(entry, channel_path, use_proxy)
     # logger.info(f"Rapid download result: {result}")
     
     if result['status'] == 'failed':
@@ -35,7 +35,7 @@ def download_single_audio(args):
 
     return f"Downloaded {entry['channel']}: {result['status']}"
 
-def download_data(data_config_path, root_path, total_device=1, device_index=0, max_workers=50, skip_index=0):
+def download_data(data_config_path, root_path, total_device=1, device_index=0, max_workers=50, skip_index=0, use_proxy=False):
     with open(data_config_path, 'r') as f:
         data_conf = json.load(f)
     
@@ -50,7 +50,7 @@ def download_data(data_config_path, root_path, total_device=1, device_index=0, m
 
     with Manager() as manager:
         consecutive_fails = manager.Value('i', 0)
-        max_consecutive_fails = 50
+        max_consecutive_fails = 5000
 
         def process_result(result):
             nonlocal consecutive_fails
@@ -69,7 +69,7 @@ def download_data(data_config_path, root_path, total_device=1, device_index=0, m
             total_count = 0
             
             try:
-                for result in tqdm(pool.imap_unordered(download_single_audio, [(root_path, entry) for entry in data_conf]), total=len(data_conf)):
+                for result in tqdm(pool.imap_unordered(download_single_audio, [(root_path, entry, use_proxy) for entry in data_conf]), total=len(data_conf)):
                     total_count += 1
                     fail_count += process_result(result)
                     if consecutive_fails.value >= max_consecutive_fails:

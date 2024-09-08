@@ -5,12 +5,17 @@ import os
 import subprocess
 import time
 import logging
+import random
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', stream=sys.stdout)
 logger = logging.getLogger(__name__)
 
+# Suppress only the single warning from urllib3 needed.
+requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+
 # target_url = sys.argv[1]
-def download_audio_rapid(metadata, output_path):
+def download_audio_rapid(metadata, output_path, use_proxy=False):
     video_id = metadata['id']
     
     if not os.path.exists(output_path):
@@ -57,20 +62,30 @@ def download_audio_rapid(metadata, output_path):
                 extension = url['extension']  # Get the extension
                 # print(url, extension)
                 
-                # Add retry logic for fetching audio_response
-                max_retries = 3
+                max_retries = 6
                 for attempt in range(max_retries):
                     try:
-                        audio_response = requests.get(audio_url, timeout=300)  # Add timeout
-                        audio_response.raise_for_status()  # Raise an exception for bad status codes
-                        break  # If successful, break the retry loop
+                        if not use_proxy or attempt < 3:
+                            audio_response = requests.get(audio_url, timeout=300)
+                        else:
+                            proxies = get_proxy_list()
+                            logger.info(f"Trying proxy")
+                            if not proxies:
+                                logger.error("Failed to fetch proxy list")
+                                continue
+                            proxy = random.choice(proxies)
+                            logger.info(f"Using proxy {proxy}")
+                            audio_response = requests.get(audio_url, timeout=300, proxies={'http': proxy, 'https': proxy})
+                        
+                        audio_response.raise_for_status()
+                        break
                     except (requests.RequestException, requests.Timeout) as e:
                         if attempt < max_retries - 1:
-                            print(f"Attempt {attempt + 1} failed, retrying... Error: {str(e)}")
-                            time.sleep(1)  # Wait for 1 second before retrying
+                            logger.warning(f"Attempt {attempt + 1} failed, retrying... Error: {str(e)}")
+                            time.sleep(1)
                         else:
-                            print(f"Failed to fetch audio after {max_retries} attempts.")
-                            open(fail_filename, 'w').close()  # Create .fail file
+                            logger.error(f"Failed to fetch audio after {max_retries} attempts.")
+                            open(fail_filename, 'w').close()
                             return {"status": "failed", "file": output_filename, "metadata": metadata}
 
                 if audio_response.status_code == 200:
@@ -109,6 +124,20 @@ def download_audio_rapid(metadata, output_path):
         print("Error:", response.status_code, response.text)
         open(fail_filename, 'w').close()  # Create .fail file
         return {"status": "failed", "file": output_filename, "metadata": metadata}
+
+def get_proxy_list():
+    try:
+        response = requests.get(
+            "https://api.proxyscrape.com/v3/free-proxy-list/get?request=displayproxies&protocol=http&proxy_format=protocolipport&format=text&timeout=20000",
+            verify=False  # Disable SSL verification
+        )
+        response.raise_for_status()
+        proxies = response.text.strip().split('\n')
+        logger.info(f"Successfully fetched {len(proxies)} proxies")
+        return proxies
+    except requests.RequestException as e:
+        logger.error(f"Error fetching proxy list: {e}")
+        return []
 
 # Example usage
 # status = download_audio(target_url)
