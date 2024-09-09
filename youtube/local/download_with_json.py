@@ -28,7 +28,7 @@ def download_single_audio(args):
     #     # If yt-dlp download fails, try rapid
     #     logger.info("yt-dlp download failed. Trying rapid download...")
     result = download_audio_rapid(entry, channel_path, use_proxy)
-    # logger.info(f"Rapid download result: {result}")
+    logger.info(f"Rapid download result: {result}")
     
     if result['status'] == 'failed':
         return 'fail'
