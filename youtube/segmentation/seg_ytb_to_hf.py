@@ -21,7 +21,7 @@ class SegmenteAudio(object):
 
     def __call__(self, batch):
         output_batch = {k : [] for k in set(batch.keys()).union(set(["segment_id"]))}
-        
+        # print('segmenting')
         audios = batch['audio']
         keep_keys = set(output_batch.keys()) - set(['audio', "segment_id"]) 
         
@@ -60,7 +60,8 @@ def segment_ytb_to_hf(raw_folder, output_path, batch_size=10, workers=4):
                 ori_dict["sentence"].append("")  # Assuming 'sentence' to be filled later or elsewhere
                 ori_dict["ytb_id"].append(ytb_id)
     
-    # print(ori_dict)
+    print(len(ori_dict["audio"]))
+    # exit()
     ori_ds = Dataset.from_dict(ori_dict)
     ori_ds = ori_ds.cast_column('audio', Audio(sampling_rate=16000))
     split_funct = SegmenteAudio(sampling_rate=16000)
@@ -71,9 +72,9 @@ def segment_ytb_to_hf(raw_folder, output_path, batch_size=10, workers=4):
     print(features_dict)
     features = Features(features_dict)
     splited_ds = ori_ds.map(split_funct, batched=True, num_proc=workers, batch_size=batch_size, 
-                remove_columns=ori_ds.column_names, features=features)
+                remove_columns=ori_ds.column_names, features=features, cache_file_name=f'/home/geyu/.cache/cache.arrow', keep_in_memory=False)
     
-    splited_ds.save_to_disk(output_path)
+    splited_ds.save_to_disk(output_path, num_proc=workers)
 
 if __name__ == "__main__":
     fire.Fire(segment_ytb_to_hf)
