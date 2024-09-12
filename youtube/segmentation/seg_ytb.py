@@ -1,11 +1,12 @@
 import os
 import sys
 import subprocess
-import argparse
 from pathlib import Path
 from tqdm import tqdm
-import multiprocessing
-from functools import partial
+import concurrent.futures
+from queue import Queue
+from threading import Thread
+import fire
 
 def get_duration(file_path):
     """Get the duration of an audio file using ffprobe."""
@@ -57,40 +58,48 @@ def process_file(file, output_dir):
     
     return segment_mp3(file, channel, output_dir)
 
-def process_segment(file_segment, output_dir, pbar):
-    results = []
-    for file in file_segment:
-        success = process_file(file, output_dir)
-        results.append(success)
-        pbar.update(1)
-    return results
-
-def main(source_dir, output_dir, max_workers):
+def producer(queue, source_dir):
     source_path = Path(source_dir)
-    mp3_files = list(source_path.rglob('*.mp3'))
-    total_files = len(mp3_files)
+    for file in source_path.rglob('*.mp3'):
+        queue.put(file)
+    queue.put(None)  # Signal the end of the queue
+
+def consumer(queue, output_dir, pbar):
+    while True:
+        file = queue.get()
+        if file is None:
+            break
+        success = process_file(file, output_dir)
+        pbar.update(1)
+        queue.task_done()
+
+def segment_ytb(source_dir: str, output_dir: str, max_workers: int = os.cpu_count() * 2):
+    """
+    Segment MP3 files into 30-second chunks.
+
+    Args:
+        source_dir (str): Source directory containing MP3 files
+        output_dir (str): Output directory for segmented files
+        max_workers (int, optional): Maximum number of worker threads. Defaults to 2 * number of CPU cores.
+    """
+    source_path = Path(source_dir)
+    total_files = sum(1 for _ in source_path.rglob('*.mp3'))
     
-    # Split the list of files into segments
-    segment_size = (total_files + max_workers - 1) // max_workers
-    file_segments = [mp3_files[i:i+segment_size] for i in range(0, total_files, segment_size)]
+    queue = Queue(maxsize=max_workers * 2)  # Buffer for files to process
     
-    with multiprocessing.Pool(max_workers) as pool:
+    # Start the producer thread
+    producer_thread = Thread(target=producer, args=(queue, source_dir))
+    producer_thread.start()
+    
+    # Create and start consumer threads
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
         with tqdm(total=total_files, desc="Processing files") as pbar:
-            process_func = partial(process_segment, output_dir=output_dir, pbar=pbar)
-            results = pool.map(process_func, file_segments)
+            futures = [executor.submit(consumer, queue, output_dir, pbar) for _ in range(max_workers)]
+            concurrent.futures.wait(futures)
     
-    # Flatten results and count failures
-    flat_results = [item for sublist in results for item in sublist]
-    failures = flat_results.count(False)
+    producer_thread.join()
     
-    print(f"\nProcessing complete. {total_files - failures} files processed successfully, {failures} failures.")
+    print(f"\nProcessing complete. {total_files} files processed.")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Segment MP3 files into 30-second chunks.")
-    parser.add_argument("source_dir", help="Source directory containing MP3 files")
-    parser.add_argument("output_dir", help="Output directory for segmented files")
-    parser.add_argument("--max_workers", type=int, default=40,
-                        help="Maximum number of worker processes (default: number of CPU cores)")
-    args = parser.parse_args()
-
-    main(args.source_dir, args.output_dir, args.max_workers)
+    fire.Fire(segment_ytb)
